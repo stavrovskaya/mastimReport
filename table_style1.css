@@ -1,6 +1,9 @@
 .main-container {
 	max-width: 2000px !important;
 }
+.summary-row td{
+	font-weight: bold;
+}
 body {
   margin: 50px 50px 50px 50px;
   padding: 1em;
@@ -13,6 +16,7 @@ td, th{
 	padding:7px; border:#4e95f4 1px solid;
 	word-wrap: break-word;
 	word-break: break-all;
+	font-size:	12px;
 }
 /* provide some minimal visual accomodation for IE8 and below */
 tr{

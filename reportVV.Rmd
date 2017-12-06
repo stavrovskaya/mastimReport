@@ -57,7 +57,7 @@ library(xtable)
 report <- read.csv(fname)
 #rename columns
 #campaign_id	CampaignName	keyword	Cost	sessions	Impressions	Clicks	CPC	AvgClickPosition	AvgImpressionPosition	CTR	allGoalsCompletions	transactionRevenue	CPA	ROI
-colnames(report)<-c("campaign_id",	"Название кампании",	"Ключевые слова",	"Расход",	"Сессии",	"Показы",	"Клики",	"CPC",	"Средняя позиция клика",	"Средняя позиция показа",	"CTR",	"Достижения целей",	"Доход",	"CPA",	"ROI")
+colnames(report)<-c("campaign_id",	"Название кампании",	"Ключевые слова",	"Расход",	"Сессии",	"Показы",	"Клики",	"CPC",	"Ср. позиция клика",	"Ср. позиция показа",	"CTR",	"Достижения целей",	"Доход",	"CPA",	"ROI")
 
 if(type == "dif"){
   print(xtable(report), type = "html", include.rownames = F, html.table.attributes='id="difTable" class="TFtable"')
@@ -85,13 +85,33 @@ var rows = tbody.getElementsByTagName('tr');
 
 
 for (var i=0, len=rows.length; i<len; i++){
-    cells = rows[i].getElementsByTagName('td');
+    var cells = rows[i].getElementsByTagName('td');
+    if(cells[2].innerText=="все"){
+      rows[i].className = "summary-row";
+    }
     for (var j=3, len2=cells.length; j<len2; j++){
-      if (parseFloat(cells[j].innerHTML,10) < 0){
-          cells[j].style.backgroundColor = '#F78181';
+      var cell_value = parseFloat(cells[j].innerHTML,10);
+      if (cell_value < 0){
+          if (cell_value > -20){
+            cells[j].style.backgroundColor = '#ffcccc';
+          }
+          else if (cell_value > -50){
+            cells[j].style.backgroundColor = '#ff6666';
+          }
+          else {
+            cells[j].style.backgroundColor = '#ff0000';
+          }
       }
-      else if (parseFloat(cells[j].innerHTML,10) > 0){
-          cells[j].style.backgroundColor = '#81F781';
+      else if (cell_value > 0){
+          if (cell_value < 20){
+            cells[j].style.backgroundColor = '#ebfaeb';
+          }
+          else if (cell_value < 50){
+            cells[j].style.backgroundColor = '#99e699';
+          }
+          else {
+            cells[j].style.backgroundColor = '#33cc33';
+          }
       }
     }
 }

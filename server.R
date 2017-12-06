@@ -8,11 +8,16 @@
 #
 
 library(shiny)
+library(shinyjs)
+
+
 
 
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
+  
+  
   output$warning <- renderText({ 
     ""
   })
@@ -25,10 +30,17 @@ shinyServer(function(input, output, session) {
   observeEvent(input$do, {
     
     if (input$date1>input$date2 || input$date3>input$date4 ){
-      output$warning=renderText({"Ошибка: Начальная дата периода должна быть меньше конечной"})
+      output$warning<-renderText({"Ошибка: Начальная дата периода должна быть меньше конечной"})
+    }
+    else if(input$ga_view_id==""){
+      output$warning<-renderText({"Ошибка: Введите идентификатор представления GA"})
+    }
+    else if(input$ya_login == ""){
+      output$warning<-renderText({"Ошибка: Введите логин проекта яндекс"})
     }
     else{
       source("formReport.R")
+      init(input$ga_view_id, input$ya_login, input$goals)
       form_reports(input$date1, input$date2, input$date3, input$date4)
       stopApp()
     }
@@ -50,6 +62,16 @@ shinyServer(function(input, output, session) {
     })
   })
   observeEvent(input$date4, {
+    output$warning <- renderText({ 
+      ""
+    })
+  })
+  observeEvent(input$ga_view_id, {
+    output$warning <- renderText({ 
+      ""
+    })
+  })
+  observeEvent(input$ya_login, {
     output$warning <- renderText({ 
       ""
     })

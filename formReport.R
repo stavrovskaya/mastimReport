@@ -1,4 +1,5 @@
 library(googleAnalyticsR)
+library(googleAuthR)
 library(devtools)
 library(dplyr)
 library(ryandexdirect)
@@ -128,23 +129,23 @@ dif_report<-function(report1, report2){
   result<-data.frame(campaign_id=tmp[, c("campaign_id")])
   result$CampaignName<-tmp$CampaignName.x
   result$keyword<-tmp$keyword
-  result$Cost<-(tmp$Cost.x-tmp$Cost.y)/tmp$Cost.y
-  result$sessions<-(tmp$sessions.x - tmp$sessions.y)/tmp$sessions.y
-  result$Impressions<-(tmp$Impressions.x - tmp$Impressions.y)/tmp$Impressions.y
-  result$Clicks<-(tmp$Clicks.x - tmp$Clicks.y)/tmp$Clicks.y
-  result$CPC<-(tmp$Cost.x - tmp$Cost.y)/tmp$Cost.y
+  result$Cost<-as.integer((tmp$Cost.x-tmp$Cost.y)/tmp$Cost.y*100)
+  result$sessions<-as.integer((tmp$sessions.x - tmp$sessions.y)/tmp$sessions.y*100)
+  result$Impressions<-as.integer((tmp$Impressions.x - tmp$Impressions.y)/tmp$Impressions.y*100)
+  result$Clicks<-as.integer((tmp$Clicks.x - tmp$Clicks.y)/tmp$Clicks.y*100)
+  result$CPC<-as.integer((tmp$Cost.x - tmp$Cost.y)/tmp$Cost.y*100)
   result$AvgClickPosition<-
     ifelse(is.na(tmp$AvgClickPosition.x)|tmp$AvgClickPosition.x=="--"|is.na(tmp$AvgClickPosition.y)|tmp$AvgClickPosition.y=="--", 
-           NA, (as.numeric(tmp$AvgClickPosition.x) - as.numeric(tmp$AvgClickPosition.y))/as.numeric(tmp$AvgClickPosition.y))
+           NA, as.integer((as.numeric(tmp$AvgClickPosition.x) - as.numeric(tmp$AvgClickPosition.y))/as.numeric(tmp$AvgClickPosition.y))*100)
   result$AvgImpressionPosition<-
     ifelse(is.na(tmp$AvgImpressionPosition.x)|tmp$AvgImpressionPosition.x=="--"|is.na(tmp$AvgImpressionPosition.y)|tmp$AvgImpressionPosition.y=="--", 
-           NA, (as.numeric(tmp$AvgImpressionPosition.x) - as.numeric(tmp$AvgImpressionPosition.y))/as.numeric(tmp$AvgImpressionPosition.y))
+           NA, as.integer((as.numeric(tmp$AvgImpressionPosition.x) - as.numeric(tmp$AvgImpressionPosition.y))/as.numeric(tmp$AvgImpressionPosition.y)*100))
   
-  result$CTR<-(tmp$CTR.x - tmp$CTR.y)/tmp$CTR.y
-  result$allGoalsCompletions<-(tmp$allGoalsCompletions.x - tmp$allGoalsCompletions.y)/tmp$allGoalsCompletions.y
-  result$transactionRevenue<-(tmp$transactionRevenue.x - tmp$transactionRevenue.y)/tmp$transactionRevenue.y
-  result$CPA<-(tmp$CPA.x - tmp$CPA.y)/tmp$CPA.y
-  result$ROI<-(tmp$ROI.x - tmp$ROI.y)/tmp$ROI.y
+  result$CTR<-as.integer((tmp$CTR.x - tmp$CTR.y)/tmp$CTR.y*100)
+  result$allGoalsCompletions<-as.integer((tmp$allGoalsCompletions.x - tmp$allGoalsCompletions.y)/tmp$allGoalsCompletions.y*100)
+  result$transactionRevenue<-as.integer((tmp$transactionRevenue.x - tmp$transactionRevenue.y)/tmp$transactionRevenue.y*100)
+  result$CPA<-as.integer((tmp$CPA.x - tmp$CPA.y)/tmp$CPA.y*100)
+  result$ROI<-as.integer((tmp$ROI.x - tmp$ROI.y)/tmp$ROI.y*100)
   return(result)
 }
 remove_Inf_Nan<-function(x){
@@ -171,23 +172,41 @@ add_blanc_rows<-function(report){
   counts<-dplyr::count(report, campaign_id)
   last_ind<-1
   for (i in 1:nrow(counts)){
-    
     report_result<-rbind(report_result, report[last_ind:as.numeric(last_ind+counts[i,2]-1),])
     last_ind<-as.numeric(last_ind+counts[i,2])
     report_result<-rbind(report_result, na_str)
   }
   return(report_result[c(-1),])
 }
+summarise_by_campain<-function(report){
+  b<-dplyr::summarise(group_by(report, campaign_id, CampaignName), Cost=sum(Cost, na.rm = TRUE), sessions=sum(sessions, na.rm=TRUE), Impressions=sum(Impressions, na.rm=TRUE), Clicks = sum(Clicks, na.rm=TRUE), AvgClickPosition=mean(AvgClickPosition, na.rm=TRUE), AvgImpressionPosition=mean(AvgImpressionPosition, na.rm=TRUE), allGoalsCompletions=mean(allGoalsCompletions, na.rm=TRUE), transactionRevenue=sum(transactionRevenue, na.rm=TRUE))
+  b<-data.frame(b)
+  b$keyword<-rep(" все", nrow(b))
+  b$CPC<-b$Cost/b$Clicks
+  b$CTR<-b$Clicks/b$Impressions
+  b$CPA<-b$Cost/b$allGoalsCompletions
+  b$ROI<-100*(b$transactionRevenue - b$Cost)/b$Cost
+  b<-b[, c(1,2,11,3,4,5,6,12,7,8,13,9,10,14,15)]
+  b<-data.frame(b[,c(1,2,3)],apply(b[,c(-1,-2,-3)], 2, remove_Inf_Nan))
+  return(b)
+}
 form_reports<-function(date_start1, date_end1, date_start2, date_end2){
   auth()
   report.ya.1<-make_report_ya(date_start1, date_end1)
   report.ya.2<-make_report_ya(date_start2, date_end2)
   
-  report.ya.dif<-dif_report(report.ya.1, report.ya.2)
-  
   #remove_nan_inf
   report.ya.1<-data.frame(report.ya.1[,c(1,2,3)],apply(report.ya.1[,c(-1,-2,-3)], 2, remove_Inf_Nan))
   report.ya.2<-data.frame(report.ya.2[,c(1,2,3)],apply(report.ya.2[,c(-1,-2,-3)], 2, remove_Inf_Nan))
+  
+  
+  #add summary
+  report.ya.1<-rbind(summarise_by_campain(report.ya.1), report.ya.1)
+  report.ya.2<-rbind(summarise_by_campain(report.ya.2), report.ya.2)
+  
+  
+  report.ya.dif<-dif_report(report.ya.1, report.ya.2)
+  
   
   report.ya.dif<-data.frame(report.ya.dif[,c(1,2,3)],apply(report.ya.dif[,c(-1,-2,-3)], 2, remove_Inf_Nan))
   
@@ -197,36 +216,38 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2){
     report.ya.2<-remove_na_rows(report.ya.2)
     report.ya.dif<-remove_na_rows(report.ya.dif)
   }
+  #
+  
+  
+  #
+  dir.create(file.path(getwd(), yalogin), showWarnings = FALSE)
+  
+  write.csv(file=paste(yalogin,"report.ya.1.csv", sep="/"), add_blanc_rows(report.ya.1), row.names = F)
+  write.csv(file=paste(yalogin,"report.ya.2.csv", sep="/"), add_blanc_rows(report.ya.2), row.names = F)
+  write.csv(file=paste(yalogin,"report.ya.dif.csv", sep="/"), add_blanc_rows(report.ya.dif), row.names = F)
   
   
   
-  #add blanc rows between campaigns
-  
-  
-  write.csv(file="report.ya.1.csv", add_blanc_rows(report.ya.1), row.names = F)
-  write.csv(file="report.ya.2.csv", add_blanc_rows(report.ya.2), row.names = F)
-  write.csv(file="report.ya.dif.csv", add_blanc_rows(report.ya.dif), row.names = F)
-  
-  
-  
-  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.html", sep=""), output_dir = yalogin,
-         params=list(fname="report.ya.dif.csv", type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin))
-  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.html", sep=""), output_dir = yalogin,
-         params=list(fname="report.ya.1.csv", type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin))
-  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.html", sep=""), output_dir = yalogin,
-         params=list(fname="report.ya.2.csv", type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin))
+  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.yandex.html", sep=""), output_dir = yalogin,
+         params=list(fname=paste(yalogin,"report.ya.dif.csv", sep="/"), type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin))
+  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.yandex.html", sep=""), output_dir = yalogin,
+         params=list(fname=paste(yalogin,"report.ya.1.csv", sep="/"), type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin))
+  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.yandex.html", sep=""), output_dir = yalogin,
+         params=list(fname=paste(yalogin,"report.ya.2.csv", sep="/"), type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin))
 }
 
-init<-function(gaview_id, ya_login, goals){
+init<-function(gaview_id, ya_login, goals_str){
   ga_view_id<<-gaview_id
   yalogin<<-ya_login
-  goals_ga_numbers<<-goals
+#  goals_ga_numbers<<-goals
+  goals_ga_numbers<<-unlist(strsplit(goals_str, ", "))
   
 }
-auth<-function(){
+auth<-function(google_account="sz.mastim", yandex_account="stbinario" ){
   #authentification
   #yandex.direct
-  my_token <<- readChar("ya_token.txt", file.info("ya_token.txt")$size)#yadirGetToken()
+  ya_fname<-paste(yandex_account, ".ya.token.txt", sep="")
+  my_token <<- readChar(ya_fname, file.info(ya_fname)$size)#yadirGetToken()
   #ga
-  ga_auth()
+  gar_auth(paste(google_account,".httr-oauth", sep=""))
 }
