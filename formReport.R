@@ -226,7 +226,7 @@ init<-function(gaview_id, ya_login, goals){
 auth<-function(){
   #authentification
   #yandex.direct
-  my_token <<- "AQAAAAAEsOOqAAMfZVjVmhM-R0P0sq5TZznWzhs"#yadirGetToken()
+  my_token <<- readChar("ya_token.txt", file.info("ya_token.txt")$size)#yadirGetToken()
   #ga
   ga_auth()
 }
