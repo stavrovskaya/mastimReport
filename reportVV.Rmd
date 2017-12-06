@@ -1,0 +1,100 @@
+---
+title: "`r params$name`"
+author: "mastim"
+date: "`r Sys.Date()`"
+
+output: 
+  html_document:
+   css: ./table_style1.css
+params: 
+  fname: "report.ya.dif.csv"
+  type: "dif"
+  date1_start: ""
+  date1_end: ""
+  date2_start: ""
+  date2_end: ""
+  name: "report"
+  prog_name: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+date1_start <- params$date1_start#"2017-11-01"
+date1_end <- params$date1_end#"2017-11-07"
+
+date2_start <- params$date2_start#"2017-11-08"
+date2_end <- params$date2_end#"2017-11-14"
+
+fname <- params$fname#"report.ya.dif.csv"
+#fname <- "report.ya.1.csv"
+
+type <- params$type#"dif"
+#type <- "plane"
+
+period_text<-""
+
+if (type == "plane"){
+  period_text<-paste("period: ", date1_start, " - ", date1_end, sep="")
+}else{
+  period_text<-paste("period 1: ", date1_start, " - ", date1_end, "<p>", 
+                     "period 2: ", date2_start, " - ", date2_end, sep="")
+}
+```
+
+## Report
+
+
+`r period_text`
+
+### project: *`r params$prog_name`*
+
+
+
+
+```{r table_dif, echo=FALSE, cache=FALSE, warning=FALSE, comment=FALSE, warning=FALSE, message=FALSE, results='asis'}
+library(xtable)
+
+report <- read.csv(fname)
+#rename columns
+#campaign_id	CampaignName	keyword	Cost	sessions	Impressions	Clicks	CPC	AvgClickPosition	AvgImpressionPosition	CTR	allGoalsCompletions	transactionRevenue	CPA	ROI
+colnames(report)<-c("campaign_id",	"Название кампании",	"Ключевые слова",	"Расход",	"Сессии",	"Показы",	"Клики",	"CPC",	"Средняя позиция клика",	"Средняя позиция показа",	"CTR",	"Достижения целей",	"Доход",	"CPA",	"ROI")
+
+if(type == "dif"){
+  print(xtable(report), type = "html", include.rownames = F, html.table.attributes='id="difTable" class="TFtable"')
+} else {
+  print(xtable(report), type = "html", include.rownames = F, html.table.attributes='id="planeTable" class="TFtable"')
+}
+
+```
+<script type"text/javascript">
+var t =$('.TFtable'); //jquery Table Object
+var firstTR = $('tr:first',t); //geting firstTR
+$('<thead class="fixedHeader"></thead>')
+  .prependTo(t)
+  .append(firstTR.clone());
+
+firstTR.remove();//removing First TR
+
+
+</script>
+
+<script type="text/javascript">
+var table = document.getElementById('difTable');
+var tbody = table.getElementsByTagName('tbody')[0];
+var rows = tbody.getElementsByTagName('tr');
+
+
+for (var i=0, len=rows.length; i<len; i++){
+    cells = rows[i].getElementsByTagName('td');
+    for (var j=3, len2=cells.length; j<len2; j++){
+      if (parseFloat(cells[j].innerHTML,10) < 0){
+          cells[j].style.backgroundColor = '#F78181';
+      }
+      else if (parseFloat(cells[j].innerHTML,10) > 0){
+          cells[j].style.backgroundColor = '#81F781';
+      }
+    }
+}
+
+
+</script>

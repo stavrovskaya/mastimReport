@@ -1,0 +1,71 @@
+.main-container {
+	max-width: 2000px !important;
+}
+body {
+  margin: 50px 50px 50px 50px;
+  padding: 1em;
+  line-height: 20px;
+}
+table{
+	width:100%;
+}
+td, th{ 
+	padding:7px; border:#4e95f4 1px solid;
+	word-wrap: break-word;
+	word-break: break-all;
+}
+/* provide some minimal visual accomodation for IE8 and below */
+tr{
+	background: #b8d1f3;
+}
+/*  Define the background color for all the ODD background rows  */
+tr:nth-child(odd){ 
+	background: #b8d1f3;
+}
+/*  Define the background color for all the EVEN background rows  */
+tr:nth-child(even){
+	background: #dae5f4;
+}
+
+td:nth-child(1) {
+	width: 10%;
+}
+td:nth-child(2) {
+	width: 20%;
+}
+td:nth-child(3) {
+	width: 10%;
+}
+td:nth-child(n+4) {
+	width: 5%;
+}
+th:nth-child(1) {
+	width: 10%;
+}
+th:nth-child(2) {
+	width: 20%;
+}
+th:nth-child(3) {
+	width: 10%;
+}
+th:nth-child(n+4) {
+	width: 5%;
+}
+
+
+html>body tbody {
+	display: block;
+	height: 400px;
+	overflow: auto;
+	width: 100%
+}
+
+html>body thead {
+	display: table;
+	overflow: auto;
+	width: 99%
+}
+
+
+
+
