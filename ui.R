@@ -32,7 +32,7 @@ shinyUI(fluidPage(
       textInput("ga_view_id", "Идентификатор предствления GA", "120758474"),
       
       textInput("ya_login", "Логин проекта яндекс", "biolatic-project"),
-      #
+      
       textInput("goals", "Номера целей GA", "6, 12, 13, 15, 16, 17, 3, 20"),
       
       actionButton("do", "загрузить отчет")
@@ -40,7 +40,7 @@ shinyUI(fluidPage(
     mainPanel(
       h4("Сравнительный отчет по периодам"),
       h5(textOutput("period1")),
-      h4("и"),
+      h4("по"),
       h5(textOutput("period2")),
       h4(textOutput("warning"), style="color:red")
     )
