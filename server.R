@@ -27,6 +27,11 @@ shinyServer(function(input, output, session) {
   output$period2 <- renderText({ 
     paste(input$date3, "-", input$date4)
   })
+  
+  
+
+  
+  
   observeEvent(input$do, {
     
     if (input$date1>input$date2 || input$date3>input$date4 ){
@@ -47,6 +52,10 @@ shinyServer(function(input, output, session) {
       
     }
     else{
+
+
+      
+      
       source("formReport.R")
       progress <- shiny::Progress$new()
       progress$set(message = "Computing data", value = 0)
@@ -63,6 +72,11 @@ shinyServer(function(input, output, session) {
       
       init(input$ga_view_id, input$ya_login, input$goals)
       form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
+      
+ #     output$mytable = DT::renderDataTable({
+ #       report
+#      })
+      
       stopApp()
     }
 

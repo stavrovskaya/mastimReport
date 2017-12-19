@@ -8,26 +8,45 @@
 #
 
 library(shiny)
-
+library(DT)
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
       h4("Выберите даты"),
       h5("Период 1"),
-      # Application title
-      dateInput("date1", "с:", value = Sys.Date()-15),
-      
-      # Default value is the date in client's time zone
-      dateInput("date2", "по:", value = Sys.Date()-8),
-      
+      fluidRow(
+        
+        column(6,
+               
+              
+              dateInput("date1", "с:", value = Sys.Date()-15)
+              
+        ),
+        
+        
+        
+        column(6,
+              
+              dateInput("date2", "по:", value = Sys.Date()-8)
+        )
+      ),
       h5("Период 2"),
-      
-      # value is always yyyy-mm-dd, even if the display format is different
-      dateInput("date3", "с:", value = Sys.Date()-7),
-      
-      # Pass in a Date object
-      dateInput("date4", "по:"),
+      fluidRow(
+        
+        column(6,
+               
+               dateInput("date3", "с:", value = Sys.Date()-7)
+               
+        ),
+        
+        
+        
+        column(6,
+               
+               dateInput("date4", "по:")
+        )
+      ),
       
       textInput("ga_view_id", "Идентификатор предствления GA", "120758474"),
       
@@ -39,10 +58,26 @@ shinyUI(fluidPage(
     ),
     mainPanel(
       h4("Сравнительный отчет по периодам"),
-      h5(textOutput("period1")),
-      h4("по"),
-      h5(textOutput("period2")),
-      h4(textOutput("warning"), style="color:red")
+      fluidRow(
+        
+        column(6,
+               
+               h5(textOutput("period1"))
+               
+        ),
+        
+        
+        
+        column(6,
+               
+               h5(textOutput("period2"))
+        )
+      ),
+     
+      h4(textOutput("warning"), style="color:red")#,
+      #DT::dataTableOutput("mytable")
+      
+      
     )
   )
   

@@ -16,6 +16,8 @@ ga_view_id=120758474
 yalogin<-"biolatic-project"
 goals_ga_numbers<-c(6, 12, 13, 15, 16, 17, 3, 20)
 
+out_dir<-gsub("/[^/]+$", "/Results", getwd())
+
 #adwords_id="434-145-7765"
 #Био-китай 647-210-4409
 
@@ -120,7 +122,7 @@ make_report_ya<-function(date_start, date_end){
   report.ya$CPC<-report.ya$Cost/report.ya$Clicks
   report.ya$CTR<-report.ya$Clicks/report.ya$Impressions
   report.ya$CPA<-report.ya$Cost/report.ya$allGoalsCompletions
-  report.ya$ROI<-100*(report.ya$transactionRevenue - report.ya$Cost)/report.ya$Cost
+  report.ya$ROI<-round(100*(report.ya$transactionRevenue - report.ya$Cost)/report.ya$Cost)
   
   
   return(report.ya[, c("campaign_id", "CampaignName", "keyword", "Cost","sessions", "Impressions", "Clicks", "CPC", "AvgClickPosition", "AvgImpressionPosition", "CTR", "allGoalsCompletions", "transactionRevenue", "CPA", "ROI")])
@@ -156,7 +158,7 @@ make_report_google<-function(date_start, date_end){
   report.ga.google.cpc$CPC<-report.ga.google.cpc$adCost/report.ga.google.cpc$adClicks
   report.ga.google.cpc$CTR<-report.ga.google.cpc$adClicks/report.ga.google.cpc$impressions
   report.ga.google.cpc$CPA<-report.ga.google.cpc$adCost/report.ga.google.cpc$allGoalsCompletions
-  report.ga.google.cpc$ROI<-100*(report.ga.google.cpc$transactionRevenue - report.ga.google.cpc$adCost)/report.ga.google.cpc$adCost
+  report.ga.google.cpc$ROI<-round(100*(report.ga.google.cpc$transactionRevenue - report.ga.google.cpc$adCost)/report.ga.google.cpc$adCost)
   
   
   report.ga.google.cpc$AvgClickPosition<-NA
@@ -226,7 +228,7 @@ add_blanc_rows<-function(report){
 summarise_by_campain<-function(report){
   b<-dplyr::summarise(group_by(report, campaign_id, CampaignName), Cost=sum(Cost, na.rm = TRUE), sessions=sum(sessions, na.rm=TRUE), Impressions=sum(Impressions, na.rm=TRUE), Clicks = sum(Clicks, na.rm=TRUE), AvgClickPosition=mean(AvgClickPosition, na.rm=TRUE), AvgImpressionPosition=mean(AvgImpressionPosition, na.rm=TRUE), allGoalsCompletions=mean(allGoalsCompletions, na.rm=TRUE), transactionRevenue=sum(transactionRevenue, na.rm=TRUE))
   b<-data.frame(b)
-  b$keyword<-rep(" РІСЃРµ", nrow(b))
+  b$keyword<-rep(enc2utf8(" все"), nrow(b))
   b$CPC<-b$Cost/b$Clicks
   b$CTR<-b$Clicks/b$Impressions
   b$CPA<-b$Cost/b$allGoalsCompletions
@@ -237,7 +239,7 @@ summarise_by_campain<-function(report){
 }
 form_reports<-function(date_start1, date_end1, date_start2, date_end2, updateProgress = NULL){
   #for progress
-  n = 11
+  n = 16
   
   if (is.function(updateProgress)) {
     updateProgress(2/n, "authentification")
@@ -251,70 +253,112 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
   }  
   report.ya.1<-make_report_ya(date_start1, date_end1)
   
-  #report yandex
+ 
   if (is.function(updateProgress)) {
     updateProgress(4/n, "load yandex data for period 2")
   }
   report.ya.2<-make_report_ya(date_start2, date_end2)
   
-  #remove_nan_inf
+  ##remove_nan_inf
   report.ya.1<-data.frame(report.ya.1[,c(1,2,3)],apply(report.ya.1[,c(-1,-2,-3)], 2, remove_Inf_Nan))
   report.ya.2<-data.frame(report.ya.2[,c(1,2,3)],apply(report.ya.2[,c(-1,-2,-3)], 2, remove_Inf_Nan))
   
-  
-  #add summary
+  #report google
   if (is.function(updateProgress)) {
-    updateProgress(5/n, "add summary")
+    updateProgress(5/n, "load google data for period 1")
+  }    
+  
+  report.google.1<-make_report_google(date_start1, date_end1)
+  
+  if (is.function(updateProgress)) {
+    updateProgress(6/n, "load google data for period 2")
+  }    
+  
+  report.google.2<-make_report_google(date_start2, date_end2)
+  
+  
+  ##add summary
+  if (is.function(updateProgress)) {
+    updateProgress(7/n, "add summary")
   }
   report.ya.1<-rbind(summarise_by_campain(report.ya.1), report.ya.1)
   report.ya.2<-rbind(summarise_by_campain(report.ya.2), report.ya.2)
+  report.google.1<-rbind(summarise_by_campain(report.google.1), report.google.1)
+  report.google.2<-rbind(summarise_by_campain(report.google.2), report.google.2)
+  
   
   if (is.function(updateProgress)) {
-    updateProgress(6/n, "create diff report")
+    updateProgress(8/n, "create diff report")
   }  
   report.ya.dif<-dif_report(report.ya.1, report.ya.2)
-  
+  report.google.dif<-dif_report(report.google.1, report.google.2)  
   
   report.ya.dif<-data.frame(report.ya.dif[,c(1,2,3)],apply(report.ya.dif[,c(-1,-2,-3)], 2, remove_Inf_Nan))
+  report.google.dif<-data.frame(report.google.dif[,c(1,2,3)],apply(report.google.dif[,c(-1,-2,-3)], 2, remove_Inf_Nan))
   
-  #remove na rows from report tables
+  
+  
+  
+  ##remove na rows from report tables
   if (is.function(updateProgress)) {
-    updateProgress(7/n, "remove na rows from report tables")
+    updateProgress(9/n, "remove na rows from report tables")
   }  
   if (remove_na){
     report.ya.1<-remove_na_rows(report.ya.1)
     report.ya.2<-remove_na_rows(report.ya.2)
     report.ya.dif<-remove_na_rows(report.ya.dif)
+    
+    report.google.1<-remove_na_rows(report.google.1)
+    report.google.2<-remove_na_rows(report.google.2)
+    report.google.dif<-remove_na_rows(report.google.dif)
+    
   }
-  #
-  
-  
-  #
+
   if (is.function(updateProgress)) {
-    updateProgress(8/n, "write csv")
+    updateProgress(10/n, "write csv")
   }  
-  dir.create(file.path(getwd(), yalogin), showWarnings = FALSE)
+  write.csv(file=paste(out_dir, "report.ya.1.csv", sep="/"), add_blanc_rows(report.ya.1), row.names = F)
+  write.csv(file=paste(out_dir, "report.ya.2.csv", sep="/"), add_blanc_rows(report.ya.2), row.names = F)
+  write.csv(file=paste(out_dir, "report.ya.dif.csv", sep="/"), add_blanc_rows(report.ya.dif), row.names = F)
   
-  write.csv(file=paste(yalogin,"report.ya.1.csv", sep="/"), add_blanc_rows(report.ya.1), row.names = F)
-  write.csv(file=paste(yalogin,"report.ya.2.csv", sep="/"), add_blanc_rows(report.ya.2), row.names = F)
-  write.csv(file=paste(yalogin,"report.ya.dif.csv", sep="/"), add_blanc_rows(report.ya.dif), row.names = F)
+  write.csv(file=paste(out_dir, "report.google.1.csv", sep="/"), add_blanc_rows(report.google.1), row.names = F)
+  write.csv(file=paste(out_dir, "report.google.2.csv", sep="/"), add_blanc_rows(report.google.2), row.names = F)
+  write.csv(file=paste(out_dir, "report.google.dif.csv", sep="/"), add_blanc_rows(report.google.dif), row.names = F)
   
-  
+  #write yandex report
   if (is.function(updateProgress)) {
-    updateProgress(9/n, "write html report 1")
+    updateProgress(11/n, "write html report yandex diff")
   }   
-  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.yandex.html", sep=""), output_dir = yalogin,
-         params=list(fname=paste(yalogin,"report.ya.dif.csv", sep="/"), type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin))
+  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.yandex.html", sep=""), output_dir = out_dir,
+         params=list(fname=paste(out_dir, "report.ya.dif.csv", sep="/"), type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin, sourceMedium="yandex / (cpc)"))
   if (is.function(updateProgress)) {
-    updateProgress(10/n, "write html report 2")
+    updateProgress(11/n, "write html report yandex 1")
   } 
-  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.yandex.html", sep=""), output_dir = yalogin,
-         params=list(fname=paste(yalogin,"report.ya.1.csv", sep="/"), type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin))
+  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.yandex.html", sep=""), output_dir = out_dir,
+         params=list(fname=paste(out_dir, "report.ya.1.csv", sep="/"), type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin, sourceMedium="yandex / (cpc)"))
   if (is.function(updateProgress)) {
-    updateProgress(11/n, "write html report diff")
+    updateProgress(12/n, "write html report yandex 2")
   } 
-  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.yandex.html", sep=""), output_dir = yalogin,
-         params=list(fname=paste(yalogin,"report.ya.2.csv", sep="/"), type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin))
+  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.yandex.html", sep=""), output_dir = out_dir,
+         params=list(fname=paste(out_dir, "report.ya.2.csv", sep="/"), type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin, sourceMedium="yandex / (cpc)"))
+  
+  #write google report
+  if (is.function(updateProgress)) {
+    updateProgress(13/n, "write html report google diff")
+  }   
+  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.google.html", sep=""), output_dir = out_dir,
+         params=list(fname=paste(out_dir, "report.google.dif.csv", sep="/"), type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin, sourceMedium="google / (cpc)"))
+  if (is.function(updateProgress)) {
+    updateProgress(14/n, "write html report google 1")
+  } 
+  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.google.html", sep=""), output_dir = out_dir,
+         params=list(fname=paste(out_dir, "report.google.1.csv", sep="/"), type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin, sourceMedium="google / (cpc)"))
+  if (is.function(updateProgress)) {
+    updateProgress(15/n, "write html report google 2")
+  } 
+  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.google.html", sep=""), output_dir = out_dir,
+         params=list(fname=paste(out_dir, "report.google.2.csv", sep="/"), type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin, sourceMedium="google / (cpc)"))
+  
 }
 
 init<-function(gaview_id, ya_login, goals_str){
@@ -322,6 +366,11 @@ init<-function(gaview_id, ya_login, goals_str){
   yalogin<<-ya_login
 #  goals_ga_numbers<<-goals
   goals_ga_numbers<<-unlist(strsplit(goals_str, ", "))
+  
+  out_dir<<-paste(out_dir, yalogin, sep="/")
+  if (!file.exists(out_dir)){
+    dir.create(out_dir)
+  }
   
 }
 auth<-function(google_account="sz.mastim", yandex_account="stbinario" ){

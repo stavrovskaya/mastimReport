@@ -15,6 +15,7 @@ params:
   date2_end: ""
   name: "report"
   prog_name: ""
+  sourceMedium: ""
 ---
 
 ```{r setup, include=FALSE}
@@ -48,6 +49,8 @@ if (type == "plane"){
 
 ### project: *`r params$prog_name`*
 
+#### source / medium: *`r params$sourceMedium`*
+
 
 
 
@@ -57,6 +60,10 @@ library(xtable)
 report <- read.csv(fname)
 #rename columns
 #campaign_id	CampaignName	keyword	Cost	sessions	Impressions	Clicks	CPC	AvgClickPosition	AvgImpressionPosition	CTR	allGoalsCompletions	transactionRevenue	CPA	ROI
+keywords<-report$keyword
+
+
+
 colnames(report)<-c("campaign_id",	"Название кампании",	"Ключевые слова",	"Расход",	"Сессии",	"Показы",	"Клики",	"CPC",	"Ср. позиция клика",	"Ср. позиция показа",	"CTR",	"Достижения целей",	"Доход",	"CPA",	"ROI")
 
 if(type == "dif"){
@@ -64,6 +71,7 @@ if(type == "dif"){
 } else {
   print(xtable(report), type = "html", include.rownames = F, html.table.attributes='id="planeTable" class="TFtable"')
 }
+
 
 ```
 <script type"text/javascript">
@@ -118,3 +126,22 @@ for (var i=0, len=rows.length; i<len; i++){
 
 
 </script>
+```{r wordcloud, echo=FALSE, cache=FALSE, warning=FALSE, comment=FALSE, warning=FALSE, message=FALSE, results='asis'}
+library(tm)
+keyword_edt<-Corpus(VectorSource(keywords),
+       readerControl = list(reader = readPlain,
+                            load = T))
+
+keyword_edt <- tm_map(keyword_edt, stripWhitespace)
+keyword_edt <- tm_map(keyword_edt, tolower)
+keyword_edt <- tm_map(keyword_edt, removeNumbers)
+keyword_edt <- tm_map(keyword_edt, removePunctuation)
+keyword_edt <- tm_map(keyword_edt, removeWords, stopwords("russian"))
+keyword_edt <- tm_map(keyword_edt, iconv, 'UTF-8', 'cp1251')
+
+
+library(wordcloud)
+wordcloud(keyword_edt, random.order=F, max.words=1000, 
+          colors=brewer.pal(6,"Set1"))
+
+```
