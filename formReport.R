@@ -239,7 +239,7 @@ summarise_by_campain<-function(report){
 }
 form_reports<-function(date_start1, date_end1, date_start2, date_end2, updateProgress = NULL){
   #for progress
-  n = 16
+  n = 10
   
   if (is.function(updateProgress)) {
     updateProgress(2/n, "authentification")
@@ -313,52 +313,7 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
     report.google.dif<-remove_na_rows(report.google.dif)
     
   }
-
-  if (is.function(updateProgress)) {
-    updateProgress(10/n, "write csv")
-  }  
-  write.csv(file=paste(out_dir, "report.ya.1.csv", sep="/"), add_blanc_rows(report.ya.1), row.names = F)
-  write.csv(file=paste(out_dir, "report.ya.2.csv", sep="/"), add_blanc_rows(report.ya.2), row.names = F)
-  write.csv(file=paste(out_dir, "report.ya.dif.csv", sep="/"), add_blanc_rows(report.ya.dif), row.names = F)
-  
-  write.csv(file=paste(out_dir, "report.google.1.csv", sep="/"), add_blanc_rows(report.google.1), row.names = F)
-  write.csv(file=paste(out_dir, "report.google.2.csv", sep="/"), add_blanc_rows(report.google.2), row.names = F)
-  write.csv(file=paste(out_dir, "report.google.dif.csv", sep="/"), add_blanc_rows(report.google.dif), row.names = F)
-  
-  #write yandex report
-  if (is.function(updateProgress)) {
-    updateProgress(11/n, "write html report yandex diff")
-  }   
-  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.yandex.html", sep=""), output_dir = out_dir,
-         params=list(fname=paste(out_dir, "report.ya.dif.csv", sep="/"), type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin, sourceMedium="yandex / (cpc)"))
-  if (is.function(updateProgress)) {
-    updateProgress(11/n, "write html report yandex 1")
-  } 
-  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.yandex.html", sep=""), output_dir = out_dir,
-         params=list(fname=paste(out_dir, "report.ya.1.csv", sep="/"), type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin, sourceMedium="yandex / (cpc)"))
-  if (is.function(updateProgress)) {
-    updateProgress(12/n, "write html report yandex 2")
-  } 
-  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.yandex.html", sep=""), output_dir = out_dir,
-         params=list(fname=paste(out_dir, "report.ya.2.csv", sep="/"), type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin, sourceMedium="yandex / (cpc)"))
-  
-  #write google report
-  if (is.function(updateProgress)) {
-    updateProgress(13/n, "write html report google diff")
-  }   
-  render("reportVV.Rmd", "html_document", output_file = paste("dif_",yalogin, "_report.google.html", sep=""), output_dir = out_dir,
-         params=list(fname=paste(out_dir, "report.google.dif.csv", sep="/"), type="dif", date1_start=date_start1, date1_end=date_end1, date2_start=date_start2, date2_end=date_end2, name="report: comparison of two periods", prog_name = yalogin, sourceMedium="google / (cpc)"))
-  if (is.function(updateProgress)) {
-    updateProgress(14/n, "write html report google 1")
-  } 
-  render("reportVV.Rmd", "html_document", output_file = paste("period1_", yalogin, "_report.google.html", sep=""), output_dir = out_dir,
-         params=list(fname=paste(out_dir, "report.google.1.csv", sep="/"), type="plane", date1_start=date_start1, date1_end=date_end1, name="report: period 1", prog_name = yalogin, sourceMedium="google / (cpc)"))
-  if (is.function(updateProgress)) {
-    updateProgress(15/n, "write html report google 2")
-  } 
-  render("reportVV.Rmd", "html_document", output_file = paste("period2_",yalogin, "_report.google.html", sep=""), output_dir = out_dir,
-         params=list(fname=paste(out_dir, "report.google.2.csv", sep="/"), type="plane", date1_start=date_start2, date1_end=date_end2, name="report: period 2", prog_name = yalogin, sourceMedium="google / (cpc)"))
-  
+  return(list(report.ya.1, report.ya.2, report.ya.dif, report.google.1, report.google.2, report.google.dif))
 }
 
 init<-function(gaview_id, ya_login, goals_str){

@@ -74,8 +74,17 @@ shinyUI(fluidPage(
         )
       ),
      
-      h4(textOutput("warning"), style="color:red")#,
-      #DT::dataTableOutput("mytable")
+      h4(textOutput("warning"), style="color:red"),
+      tabsetPanel(
+        id = 'dataset',
+        tabPanel("report.ya.1", DT::dataTableOutput("yatable1")),
+        tabPanel("report.ya.2", DT::dataTableOutput("yatable2")),
+        tabPanel("report.ya.dif", DT::dataTableOutput("yatablediff")),
+        tabPanel("report.google.1", DT::dataTableOutput("gtable1")),
+        tabPanel("report.google.2", DT::dataTableOutput("gtable2")),
+        tabPanel("report.google.dif", DT::dataTableOutput("gtablediff"))
+        
+      )
       
       
     )

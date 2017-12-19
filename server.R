@@ -71,13 +71,33 @@ shinyServer(function(input, output, session) {
       }
       
       init(input$ga_view_id, input$ya_login, input$goals)
-      form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
+      report <-form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
       
- #     output$mytable = DT::renderDataTable({
- #       report
-#      })
+      output$yatable1 = DT::renderDataTable({
+        report[[1]]
+      })
+      output$yatable2 = DT::renderDataTable({
+        report[[2]]
+      })
+      output$yatablediff = DT::renderDataTable({
+        brks<-c(-50, -20, 0, 20, 50)
+        clrs<-c("#ff0000", "#ff6666", "#ffcccc", "#ebfaeb","#99e699", "#33cc33")
+        datatable(report[[3]]) %>% formatStyle(names(report[[3]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
+      })
+      output$gtable1 = DT::renderDataTable({
+        report[[4]]
+      })
+      output$gtable2 = DT::renderDataTable({
+        report[[5]]
+      })
+      output$gtablediff = DT::renderDataTable({
+        brks<-c(-50, -20, 0, 20, 50)
+        clrs<-c("#ff0000", "#ff6666", "#ffcccc", "#ebfaeb","#99e699", "#33cc33")
+        datatable(report[[6]]) %>% formatStyle(names(report[[6]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
+      })
       
-      stopApp()
+      
+      #stopApp()
     }
 
   })
