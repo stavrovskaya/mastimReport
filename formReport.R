@@ -119,9 +119,9 @@ make_report_ya<-function(date_start, date_end){
   # bind into one result table
   report.ya<-rbind(report.ya.keyword, report.ya.non_keyword[,colnames(report.ya.keyword)])
   report.ya$allGoalsCompletions<-apply(report.ya[,goals], 1, sum)
-  report.ya$CPC<-report.ya$Cost/report.ya$Clicks
-  report.ya$CTR<-report.ya$Clicks/report.ya$Impressions
-  report.ya$CPA<-report.ya$Cost/report.ya$allGoalsCompletions
+  report.ya$CPC<-round(report.ya$Cost/report.ya$Clicks, 2)
+  report.ya$CTR<-round(report.ya$Clicks/report.ya$Impressions, 2)
+  report.ya$CPA<-round(report.ya$Cost/report.ya$allGoalsCompletions, 2)
   report.ya$ROI<-round(100*(report.ya$transactionRevenue - report.ya$Cost)/report.ya$Cost)
   
   
@@ -155,9 +155,9 @@ make_report_google<-function(date_start, date_end){
   report.ga.google.cpc[, c(-1,-2, -3)]<-apply(report.ga.google.cpc[, c(-1,-2, -3)], 2, as.numeric)
   
   report.ga.google.cpc$allGoalsCompletions<-apply(report.ga.google.cpc[,goals], 1, sum)
-  report.ga.google.cpc$CPC<-report.ga.google.cpc$adCost/report.ga.google.cpc$adClicks
-  report.ga.google.cpc$CTR<-report.ga.google.cpc$adClicks/report.ga.google.cpc$impressions
-  report.ga.google.cpc$CPA<-report.ga.google.cpc$adCost/report.ga.google.cpc$allGoalsCompletions
+  report.ga.google.cpc$CPC<-round(report.ga.google.cpc$adCost/report.ga.google.cpc$adClicks, 2)
+  report.ga.google.cpc$CTR<-round(report.ga.google.cpc$adClicks/report.ga.google.cpc$impressions, 2)
+  report.ga.google.cpc$CPA<-round(report.ga.google.cpc$adCost/report.ga.google.cpc$allGoalsCompletions, 2)
   report.ga.google.cpc$ROI<-round(100*(report.ga.google.cpc$transactionRevenue - report.ga.google.cpc$adCost)/report.ga.google.cpc$adCost)
   
   
@@ -229,17 +229,24 @@ summarise_by_campain<-function(report){
   b<-dplyr::summarise(group_by(report, campaign_id, CampaignName), Cost=sum(Cost, na.rm = TRUE), sessions=sum(sessions, na.rm=TRUE), Impressions=sum(Impressions, na.rm=TRUE), Clicks = sum(Clicks, na.rm=TRUE), AvgClickPosition=mean(AvgClickPosition, na.rm=TRUE), AvgImpressionPosition=mean(AvgImpressionPosition, na.rm=TRUE), allGoalsCompletions=mean(allGoalsCompletions, na.rm=TRUE), transactionRevenue=sum(transactionRevenue, na.rm=TRUE))
   b<-data.frame(b)
   b$keyword<-rep(enc2utf8(" все"), nrow(b))
-  b$CPC<-b$Cost/b$Clicks
-  b$CTR<-b$Clicks/b$Impressions
-  b$CPA<-b$Cost/b$allGoalsCompletions
-  b$ROI<-100*(b$transactionRevenue - b$Cost)/b$Cost
+  b$CPC<-round(b$Cost/b$Clicks, 2)
+  b$CTR<-round(b$Clicks/b$Impressions, 2)
+  b$CPA<-round(b$Cost/b$allGoalsCompletions, 2)
+  b$ROI<-round(100*(b$transactionRevenue - b$Cost)/b$Cost)
   b<-b[, c(1,2,11,3,4,5,6,12,7,8,13,9,10,14,15)]
   b<-data.frame(b[,c(1,2,3)],apply(b[,c(-1,-2,-3)], 2, remove_Inf_Nan))
   return(b)
 }
+round_values<-function(report){
+  report[, 4]<-round(report[, 4], 2)
+  report[, 9]<-round(report[, 9], 2)
+  report[, 10]<-round(report[, 10], 2)
+  report[, 12]<-round(report[, 12], 2)
+  return(report)
+}
 form_reports<-function(date_start1, date_end1, date_start2, date_end2, updateProgress = NULL){
   #for progress
-  n = 10
+  n = 11
   
   if (is.function(updateProgress)) {
     updateProgress(2/n, "authentification")
@@ -313,6 +320,26 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
     report.google.dif<-remove_na_rows(report.google.dif)
     
   }
+  if (is.function(updateProgress)) {
+    updateProgress(10/n, "round values")
+  }  
+  report.ya.1<-round_values(report.ya.1)
+  report.ya.2<-round_values(report.ya.2)
+  report.google.1<-round_values(report.google.1)
+  report.google.2<-round_values(report.google.2)
+  
+  if (is.function(updateProgress)) {
+    updateProgress(11/n, "rename columns")
+  }  
+  cnames<-c("campaign_id",	"Название кампании",	"Ключевые слова",	"Расход",	"Сессии",	"Показы",	"Клики",	"CPC",	"Ср. поз. клика",	"Ср. поз. показа",	"CTR",	"Конверсия",	"Доход",	"CPA",	"ROI")
+  colnames(report.ya.1)<-cnames
+  colnames(report.ya.2)<-cnames
+  colnames(report.ya.dif)<-cnames
+  colnames(report.google.1)<-cnames
+  colnames(report.google.2)<-cnames
+  colnames(report.google.dif)<-cnames
+  
+  
   return(list(report.ya.1, report.ya.2, report.ya.dif, report.google.1, report.google.2, report.google.dif))
 }
 

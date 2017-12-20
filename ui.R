@@ -57,32 +57,16 @@ shinyUI(fluidPage(
       actionButton("do", "загрузить отчет")
     ),
     mainPanel(
-      h4("Сравнительный отчет по периодам"),
-      fluidRow(
-        
-        column(6,
-               
-               h5(textOutput("period1"))
-               
-        ),
-        
-        
-        
-        column(6,
-               
-               h5(textOutput("period2"))
-        )
-      ),
      
       h4(textOutput("warning"), style="color:red"),
       tabsetPanel(
         id = 'dataset',
-        tabPanel("report.ya.1", DT::dataTableOutput("yatable1")),
-        tabPanel("report.ya.2", DT::dataTableOutput("yatable2")),
-        tabPanel("report.ya.dif", DT::dataTableOutput("yatablediff")),
-        tabPanel("report.google.1", DT::dataTableOutput("gtable1")),
-        tabPanel("report.google.2", DT::dataTableOutput("gtable2")),
-        tabPanel("report.google.dif", DT::dataTableOutput("gtablediff"))
+        tabPanel("Директ.1", DT::dataTableOutput("yatable1")),
+        tabPanel("Директ.2", DT::dataTableOutput("yatable2")),
+        tabPanel("Директ.dif", DT::dataTableOutput("yatablediff")),
+        tabPanel("AdWords.1", DT::dataTableOutput("gtable1")),
+        tabPanel("AdWords.2", DT::dataTableOutput("gtable2")),
+        tabPanel("AdWords.dif", DT::dataTableOutput("gtablediff"))
         
       )
       
