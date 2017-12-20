@@ -52,13 +52,28 @@ shinyUI(fluidPage(
       ),
       selectInput('ga_account', 'Аккаунт GA', c("sz.mastim", "adv.binario")),
       
-      textInput("ga_view_id", "Идентификатор предствления GA", "120758474"),
+      textInput("ga_view_id", "Идентификатор предствления GA", ""),
       
-      textInput("ya_login", "Логин проекта яндекс", "biolatic-project"),
+      textInput("ya_login", "Логин проекта яндекс", ""),
       
-      textInput("goals", "Номера целей GA", "6, 12, 13, 15, 16, 17, 3, 20"),
+      textInput("goals", "Номера целей GA", ""),
       
-      actionButton("do", "загрузить отчет")
+      fluidRow(
+        
+        column(6,
+               
+               actionButton("do", "загрузить отчет")
+               
+        ),
+        
+        
+        
+        column(6,
+               
+               actionButton("test", "тестовый пример")
+        )
+      )
+      
     )),
     mainPanel(
       actionButton("showSidebar", "показать меню"),

@@ -418,11 +418,11 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
   return(list(report.ya.1, report.ya.2, report.ya.dif, report.google.1, report.google.2, report.google.dif))
 }
 
-init<-function(gaview_id, ya_login, goals_str, google_account="adv.binario", yandex_account="stbinario"){
+init<-function(gaview_id, ya_login, goals, google_account="adv.binario", yandex_account="stbinario"){
   ga_view_id<<-gaview_id
   yalogin<<-ya_login
-#  goals_ga_numbers<<-goals
-  goals_ga_numbers<<-unlist(strsplit(goals_str, ", "))
+  goals_ga_numbers<<-goals
+
   google.account<<-google_account
   yandex.account<<-yandex_account
 }
