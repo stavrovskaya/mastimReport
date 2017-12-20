@@ -12,6 +12,8 @@ library(rmarkdown)
 #dates are comming from shiny
 remove_na = T
 
+google.account=NA
+yandex.account=NA
 ga_view_id=120758474
 yalogin<-"biolatic-project"
 goals_ga_numbers<-c(6, 12, 13, 15, 16, 17, 3, 20)
@@ -76,12 +78,48 @@ make_report_ya<-function(date_start, date_end){
   
   goals<-paste("goal", goals_ga_numbers, "Completions", sep="")
   
-  report.ga.ya.cpc<-google_analytics_4(ga_view_id,
-                                       date_range = c(date_start, date_end), 
-                                       metrics = c("sessions", "transactionRevenue", goals), 
-                                       dimensions = c("campaign", "keyword", "sourceMedium"), 
-                                       dim_filters = my_filter_clause, anti_sample = TRUE)
-  
+  report.ga.ya.cpc<-NA
+  if (length(goals) <= 8){
+    report.ga.ya.cpc<-google_analytics_4(ga_view_id,
+                                         date_range = c(date_start, date_end), 
+                                         metrics = c("sessions", "transactionRevenue", goals), 
+                                         dimensions = c("campaign", "keyword", "sourceMedium"), 
+                                         dim_filters = my_filter_clause, anti_sample = TRUE)
+  }else if(length(goals) <= 16){
+    report.ga.ya.cpc1<-google_analytics_4(ga_view_id,
+                                         date_range = c(date_start, date_end), 
+                                         metrics = c("sessions", "transactionRevenue", goals[1:8]), 
+                                         dimensions = c("campaign", "keyword", "sourceMedium"), 
+                                         dim_filters = my_filter_clause, anti_sample = TRUE)    
+    report.ga.ya.cpc2<-google_analytics_4(ga_view_id,
+                                          date_range = c(date_start, date_end), 
+                                          metrics = c("sessions", goals[9:length(goals)]), 
+                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
+                                          dim_filters = my_filter_clause, anti_sample = TRUE)  
+    report.ga.ya.cpc<-inner_join(report.ga.ya.cpc1, report.ga.ya.cpc2)
+    report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals)]
+  }else{
+    report.ga.ya.cpc1<-google_analytics_4(ga_view_id,
+                                          date_range = c(date_start, date_end), 
+                                          metrics = c("sessions", "transactionRevenue", goals[1:8]), 
+                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
+                                          dim_filters = my_filter_clause, anti_sample = TRUE)    
+    report.ga.ya.cpc2<-google_analytics_4(ga_view_id,
+                                          date_range = c(date_start, date_end), 
+                                          metrics = c("sessions", goals[9:16]), 
+                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
+                                          dim_filters = my_filter_clause, anti_sample = TRUE) 
+    report.ga.ya.cpc3<-google_analytics_4(ga_view_id,
+                                          date_range = c(date_start, date_end), 
+                                          metrics = c("sessions", goals[17:length(goals)]), 
+                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
+                                          dim_filters = my_filter_clause, anti_sample = TRUE)  
+    
+    report.ga.ya.cpc<-inner_join(report.ga.ya.cpc1, report.ga.ya.cpc2)
+    report.ga.ya.cpc<-inner_join(report.ga.ya.cpc, report.ga.ya.cpc3)
+    report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals)]
+    
+  }
   report.ga.ya.cpc<-mutate(report.ga.ya.cpc, campaign_id=sub("[A-Za-z_-]+\\|([0-9]+)", "\\1", campaign))
   report.ga.ya.cpc$campaign_id<-as.integer(report.ga.ya.cpc$campaign_id)
   
@@ -143,12 +181,49 @@ make_report_google<-function(date_start, date_end){
                                             metrics = c("impressions", "adClicks", "adCost", "transactionRevenue"), 
                                             dimensions = c("campaign", "keyword","adwordsCampaignID"), 
                                             dim_filters = my_filter_clause, anti_sample = TRUE)  
-  report.ga.google.cpc2<-google_analytics_4(ga_view_id,
-                                       date_range = c(date_start, date_end), 
-                                       metrics = c("impressions", "sessions", goals), 
-                                       dimensions = c("campaign", "keyword"), 
-                                       dim_filters = my_filter_clause, anti_sample = TRUE)
-
+  report.ga.google.cpc2<-NA
+  if (length(goals)<=8){
+    report.ga.google.cpc2<-google_analytics_4(ga_view_id,
+                                         date_range = c(date_start, date_end), 
+                                         metrics = c("impressions", "sessions", goals), 
+                                         dimensions = c("campaign", "keyword"), 
+                                         dim_filters = my_filter_clause, anti_sample = TRUE)
+  }else if(length(goals)<=16){
+    report.ga.google.cpc2.1<-google_analytics_4(ga_view_id,
+                                              date_range = c(date_start, date_end), 
+                                              metrics = c("impressions", "sessions", goals[1:8]), 
+                                              dimensions = c("campaign", "keyword"), 
+                                              dim_filters = my_filter_clause, anti_sample = TRUE)
+    report.ga.google.cpc2.2<-google_analytics_4(ga_view_id,
+                                                date_range = c(date_start, date_end), 
+                                                metrics = c("impressions", "sessions", goals[9:length(goals)]), 
+                                                dimensions = c("campaign", "keyword"), 
+                                                dim_filters = my_filter_clause, anti_sample = TRUE)
+    report.ga.google.cpc2<-inner_join(report.ga.google.cpc2.1, report.ga.google.cpc2.2)
+    report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals)]
+  }else{
+    report.ga.google.cpc2.1<-google_analytics_4(ga_view_id,
+                                                date_range = c(date_start, date_end), 
+                                                metrics = c("impressions", "sessions", goals[1:8]), 
+                                                dimensions = c("campaign", "keyword"), 
+                                                dim_filters = my_filter_clause, anti_sample = TRUE)
+    report.ga.google.cpc2.2<-google_analytics_4(ga_view_id,
+                                                date_range = c(date_start, date_end), 
+                                                metrics = c("impressions", "sessions", goals[9:16]), 
+                                                dimensions = c("campaign", "keyword"), 
+                                                dim_filters = my_filter_clause, anti_sample = TRUE)
+    report.ga.google.cpc2.3<-google_analytics_4(ga_view_id,
+                                                date_range = c(date_start, date_end), 
+                                                metrics = c("impressions", "sessions", goals[17:length(goals)]), 
+                                                dimensions = c("campaign", "keyword"), 
+                                                dim_filters = my_filter_clause, anti_sample = TRUE)
+    
+    report.ga.google.cpc2<-inner_join(report.ga.google.cpc2.1, report.ga.google.cpc2.2)
+    report.ga.google.cpc2<-inner_join(report.ga.google.cpc2, report.ga.google.cpc2.3)
+    
+    report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals)]
+    
+  }
   report.ga.google.cpc<-inner_join(report.ga.google.cpc1, report.ga.google.cpc2, by=c("campaign", "keyword","impressions"))
   
   
@@ -251,7 +326,7 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
   if (is.function(updateProgress)) {
     updateProgress(2/n, "authentification")
   }
-  auth()
+  auth(google.account, yandex.account)
 
   
   #report yandex
@@ -343,19 +418,15 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
   return(list(report.ya.1, report.ya.2, report.ya.dif, report.google.1, report.google.2, report.google.dif))
 }
 
-init<-function(gaview_id, ya_login, goals_str){
+init<-function(gaview_id, ya_login, goals_str, google_account="adv.binario", yandex_account="stbinario"){
   ga_view_id<<-gaview_id
   yalogin<<-ya_login
 #  goals_ga_numbers<<-goals
   goals_ga_numbers<<-unlist(strsplit(goals_str, ", "))
-  
-  out_dir<<-paste(out_dir, yalogin, sep="/")
-  if (!file.exists(out_dir)){
-    dir.create(out_dir)
-  }
-  
+  google.account<<-google_account
+  yandex.account<<-yandex_account
 }
-auth<-function(google_account="sz.mastim", yandex_account="stbinario" ){
+auth<-function(google_account="adv.binario", yandex_account="stbinario" ){
   #authentification
   #yandex.direct
   ya_fname<-paste(yandex_account, ".ya.token.txt", sep="")

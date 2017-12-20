@@ -16,7 +16,12 @@ library(shinyjs)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
-  
+  observeEvent(input$showSidebar, {
+    shinyjs::show(id = "Sidebar")
+  })
+  observeEvent(input$hideSidebar, {
+    shinyjs::hide(id = "Sidebar")
+  })
   
   output$warning <- renderText({ 
     ""
@@ -70,30 +75,47 @@ shinyServer(function(input, output, session) {
         progress$set(value = value, detail = detail)
       }
       
-      init(input$ga_view_id, input$ya_login, input$goals)
+      init(input$ga_view_id, input$ya_login, input$goals, google_account=input$ga_account)
       report <-form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
       
       output$yatable1 = DT::renderDataTable({
-        report[[1]]
+
+        DT::datatable(report[[1]], options = list(
+          lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
+          pageLength = 10)
+        )
       })
       output$yatable2 = DT::renderDataTable({
-        report[[2]]
+        DT::datatable(report[[2]], options = list(
+          lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
+          pageLength = 10)
+        )
       })
       output$yatablediff = DT::renderDataTable({
         brks<-c(-50, -20, 0, 20, 50)
         clrs<-c("#ff0000", "#ff6666", "#ffcccc", "#ebfaeb","#99e699", "#33cc33")
-        datatable(report[[3]]) %>% formatStyle(names(report[[3]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
+        DT::datatable(report[[3]], options = list(
+          lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
+          pageLength = 10)) %>% formatStyle(names(report[[3]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
       })
       output$gtable1 = DT::renderDataTable({
-        report[[4]]
+        DT::datatable(report[[4]], options = list(
+          lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
+          pageLength = 10)
+        )
       })
       output$gtable2 = DT::renderDataTable({
-        report[[5]]
+        DT::datatable(report[[5]], options = list(
+          lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
+          pageLength = 10)
+        )
       })
       output$gtablediff = DT::renderDataTable({
         brks<-c(-50, -20, 0, 20, 50)
         clrs<-c("#ff0000", "#ff6666", "#ffcccc", "#ebfaeb","#99e699", "#33cc33")
-        datatable(report[[6]]) %>% formatStyle(names(report[[6]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
+        datatable(report[[6]], options = list(
+          lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
+          pageLength = 10)) %>% formatStyle(names(report[[6]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
       })
       
       

@@ -9,9 +9,12 @@
 
 library(shiny)
 library(DT)
+library(shinyjs)
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
+  useShinyjs(),
   sidebarLayout(
+    div( id ="Sidebar",
     sidebarPanel(
       h4("Выберите даты"),
       h5("Период 1"),
@@ -47,6 +50,7 @@ shinyUI(fluidPage(
                dateInput("date4", "по:")
         )
       ),
+      selectInput('ga_account', 'Аккаунт GA', c("sz.mastim", "adv.binario")),
       
       textInput("ga_view_id", "Идентификатор предствления GA", "120758474"),
       
@@ -55,8 +59,10 @@ shinyUI(fluidPage(
       textInput("goals", "Номера целей GA", "6, 12, 13, 15, 16, 17, 3, 20"),
       
       actionButton("do", "загрузить отчет")
-    ),
+    )),
     mainPanel(
+      actionButton("showSidebar", "показать меню"),
+      actionButton("hideSidebar", "спрятать меню"),
      
       h4(textOutput("warning"), style="color:red"),
       tabsetPanel(
