@@ -13,9 +13,11 @@ library(stringr)
 
 
 
-
+report<-NULL
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
+  
+  
   observeEvent(input$showSidebar, {
     shinyjs::show(id = "Sidebar")
   })
@@ -65,21 +67,22 @@ shinyServer(function(input, output, session) {
       output$warning<-renderText({"Ошибка: Введите логин проекта яндекс"})
       
     }
-    else if(input$goals == ""){
-      
-      output$warning<-renderText({"Ошибка: Введите идентификаторы целей в формате 1,2,3"})
-      
-    }
     else{
       goals_ga_numbers<<-unlist(strsplit(input$goals, ","))
       goals_ga_numbers<<-str_trim(goals_ga_numbers)
+      print(input$goals)
+      print(goals_ga_numbers)
+      
+      if (length(goals_ga_numbers)==0){
+        goals_ga_numbers<-c()
+      }
       
       if (any(grepl("[^0-9]", goals_ga_numbers))){
         output$warning<-renderText({"Ошибка: Идентификаторы целей должны состоять только из цифр, перечислите идентицикаторы целей в формате 1,2,3"})
       }else if (any(as.numeric(goals_ga_numbers)>20)||any(as.numeric(goals_ga_numbers)<=0)){
         output$warning<-renderText({"Ошибка: Идентификаторы целей могут быть только от 1 до 20"})
       }else{
-      
+        
         source("formReport.R")
         progress <- shiny::Progress$new()
         progress$set(message = "Computing data", value = 0)
@@ -95,7 +98,7 @@ shinyServer(function(input, output, session) {
         }
         
         init(input$ga_view_id, input$ya_login, goals_ga_numbers, google_account=input$ga_account)
-        report <-form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
+        report <<-form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
         
         output$yatable1 = DT::renderDataTable({
   
@@ -136,6 +139,7 @@ shinyServer(function(input, output, session) {
             lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
             pageLength = 10), selection = 'none') %>% formatStyle(names(report[[6]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
         })
+        enable("exportCSV")
       }
       
       #stopApp()
@@ -182,6 +186,31 @@ shinyServer(function(input, output, session) {
       ""
     })
   })
+  
+  observeEvent(input$exportCSV, {
+    outpath<-sub("/shiny/datesApp", "/Result/datesApp", getwd())
+    if (!is.null(report)){
+      if (!file.exists(outpath)){
+        dir.create(outpath)
+      }
+      disable("do")
+      disable("exportCSV")
+      
+
+      write.csv(report[[1]], paste(outpath, paste("direct", input$date1, input$date2, input$ya_login, ".csv", sep="_"), sep="/"))
+      write.csv(report[[2]], paste(outpath, paste("direct", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
+      write.csv(report[[3]], paste(outpath, paste("direct", input$date1, input$date2, "-", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
+      
+      write.csv(report[[4]], paste(outpath, paste("adwords", input$date1, input$date2, input$ya_login, ".csv", sep="_"), sep="/"))
+      write.csv(report[[5]], paste(outpath, paste("adwords", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
+      write.csv(report[[6]], paste(outpath, paste("adwords", input$date1, input$date2, "-", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
+      
+      enable("do")
+      enable("exportCSV")
+      }
+    
+  })
+  
   session$onSessionEnded(stopApp)
   
 })

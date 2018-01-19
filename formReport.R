@@ -16,7 +16,7 @@ google.account=NA
 yandex.account=NA
 ga_view_id=120758474
 yalogin<-"biolatic-project"
-goals_ga_numbers<-c(6, 12, 13, 15, 16, 17, 3, 20)
+goals_ga_numbers<-c()#c(6, 12, 13, 15, 16, 17, 3, 20)
 
 out_dir<-gsub("/[^/]+$", "/Results", getwd())
 
@@ -24,7 +24,7 @@ out_dir<-gsub("/[^/]+$", "/Results", getwd())
 #Био-китай 647-210-4409
 
 
-make_report_ya<-function(date_start, date_end){
+make_report_ya<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
   #get data from direct
   report.direct<-yadirGetReport(ReportType = "CRITERIA_PERFORMANCE_REPORT", 
                                 DateRangeType="CUSTOM_DATE", DateFrom = date_start, DateTo = date_end, 
@@ -75,49 +75,55 @@ make_report_ya<-function(date_start, date_end){
   
   my_filter_clause <- filter_clause_ga4(list(source_medium_filter, campaign_filter), operator = "AND")
   
+  goals_cmpl<-c()
+  if (!is.null(goals_ga_numbers)){
+    goals_cmpl<-paste("goal", goals_ga_numbers, "Completions", sep="")  
+  }
   
-  goals<-paste("goal", goals_ga_numbers, "Completions", sep="")
+  
+  #add transactions to goals
+  goals_and_transactions<-c("transactions", goals_cmpl)
   
   report.ga.ya.cpc<-NA
-  if (length(goals) <= 8){
+  if (length(goals_and_transactions) <= 8){
     report.ga.ya.cpc<-google_analytics_4(ga_view_id,
                                          date_range = c(date_start, date_end), 
-                                         metrics = c("sessions", "transactionRevenue", goals), 
+                                         metrics = c("sessions", "transactionRevenue", goals_and_transactions), 
                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
                                          dim_filters = my_filter_clause, anti_sample = TRUE)
-  }else if(length(goals) <= 16){
+  }else if(length(goals_and_transactions) <= 16){
     report.ga.ya.cpc1<-google_analytics_4(ga_view_id,
                                          date_range = c(date_start, date_end), 
-                                         metrics = c("sessions", "transactionRevenue", goals[1:8]), 
+                                         metrics = c("sessions", "transactionRevenue", goals_and_transactions[1:8]), 
                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
                                          dim_filters = my_filter_clause, anti_sample = TRUE)    
     report.ga.ya.cpc2<-google_analytics_4(ga_view_id,
                                           date_range = c(date_start, date_end), 
-                                          metrics = c("sessions", goals[9:length(goals)]), 
+                                          metrics = c("sessions", goals_and_transactions[9:length(goals_and_transactions)]), 
                                           dimensions = c("campaign", "keyword", "sourceMedium"), 
                                           dim_filters = my_filter_clause, anti_sample = TRUE)  
     report.ga.ya.cpc<-inner_join(report.ga.ya.cpc1, report.ga.ya.cpc2)
-    report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals)]
+    report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals_and_transactions)]
   }else{
     report.ga.ya.cpc1<-google_analytics_4(ga_view_id,
                                           date_range = c(date_start, date_end), 
-                                          metrics = c("sessions", "transactionRevenue", goals[1:8]), 
+                                          metrics = c("sessions", "transactionRevenue", goals_and_transactions[1:8]), 
                                           dimensions = c("campaign", "keyword", "sourceMedium"), 
                                           dim_filters = my_filter_clause, anti_sample = TRUE)    
     report.ga.ya.cpc2<-google_analytics_4(ga_view_id,
                                           date_range = c(date_start, date_end), 
-                                          metrics = c("sessions", goals[9:16]), 
+                                          metrics = c("sessions", goals_and_transactions[9:16]), 
                                           dimensions = c("campaign", "keyword", "sourceMedium"), 
                                           dim_filters = my_filter_clause, anti_sample = TRUE) 
     report.ga.ya.cpc3<-google_analytics_4(ga_view_id,
                                           date_range = c(date_start, date_end), 
-                                          metrics = c("sessions", goals[17:length(goals)]), 
+                                          metrics = c("sessions", goals_and_transactions[17:length(goals_and_transactions)]), 
                                           dimensions = c("campaign", "keyword", "sourceMedium"), 
                                           dim_filters = my_filter_clause, anti_sample = TRUE)  
     
     report.ga.ya.cpc<-inner_join(report.ga.ya.cpc1, report.ga.ya.cpc2)
     report.ga.ya.cpc<-inner_join(report.ga.ya.cpc, report.ga.ya.cpc3)
-    report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals)]
+    report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals_and_transactions)]
     
   }
   report.ga.ya.cpc<-mutate(report.ga.ya.cpc, campaign_id=sub("[A-Za-z_-]+\\|([0-9]+)", "\\1", campaign))
@@ -156,7 +162,11 @@ make_report_ya<-function(date_start, date_end){
   report.ya.non_keyword<-inner_join(report.ga.ya.cpc.non_keyword, report.direct.non_keyword, by = c("campaign_id" = "CampaignId"))
   # bind into one result table
   report.ya<-rbind(report.ya.keyword, report.ya.non_keyword[,colnames(report.ya.keyword)])
-  report.ya$allGoalsCompletions<-apply(report.ya[,goals], 1, sum)
+  if (length(goals_and_transactions)==1){
+    report.ya$allGoalsCompletions<-report.ya[,goals_and_transactions]
+  }else{
+    report.ya$allGoalsCompletions<-apply(report.ya[,goals_and_transactions], 1, sum)
+  }
   report.ya$CPC<-round(report.ya$Cost/report.ya$Clicks, 2)
   report.ya$CTR<-round(report.ya$Clicks/report.ya$Impressions, 2)
   report.ya$CPA<-round(report.ya$Cost/report.ya$allGoalsCompletions, 2)
@@ -174,7 +184,13 @@ make_report_google<-function(date_start, date_end){
   my_filter_clause <- filter_clause_ga4(list(source_medium_filter))
   
   
-  goals<-paste("goal", goals_ga_numbers, "Completions", sep="")
+  goals_cmpl<-c()
+  if (!is.null(goals_ga_numbers)){
+    goals_cmpl<-paste("goal", goals_ga_numbers, "Completions", sep="")  
+  }
+  
+  #add transactions to goals
+  goals_and_transactions<-c("transactions", goals_cmpl)
   
   report.ga.google.cpc1<-google_analytics_4(ga_view_id,
                                             date_range = c(date_start, date_end), 
@@ -182,46 +198,46 @@ make_report_google<-function(date_start, date_end){
                                             dimensions = c("campaign", "keyword","adwordsCampaignID"), 
                                             dim_filters = my_filter_clause, anti_sample = TRUE)  
   report.ga.google.cpc2<-NA
-  if (length(goals)<=8){
+  if (length(goals_and_transactions)<=8){
     report.ga.google.cpc2<-google_analytics_4(ga_view_id,
                                          date_range = c(date_start, date_end), 
-                                         metrics = c("impressions", "sessions", goals), 
+                                         metrics = c("impressions", "sessions", goals_and_transactions), 
                                          dimensions = c("campaign", "keyword"), 
                                          dim_filters = my_filter_clause, anti_sample = TRUE)
-  }else if(length(goals)<=16){
+  }else if(length(goals_and_transactions)<=16){
     report.ga.google.cpc2.1<-google_analytics_4(ga_view_id,
                                               date_range = c(date_start, date_end), 
-                                              metrics = c("impressions", "sessions", goals[1:8]), 
+                                              metrics = c("impressions", "sessions", goals_and_transactions[1:8]), 
                                               dimensions = c("campaign", "keyword"), 
                                               dim_filters = my_filter_clause, anti_sample = TRUE)
     report.ga.google.cpc2.2<-google_analytics_4(ga_view_id,
                                                 date_range = c(date_start, date_end), 
-                                                metrics = c("impressions", "sessions", goals[9:length(goals)]), 
+                                                metrics = c("impressions", "sessions", goals_and_transactions[9:length(goals_and_transactions)]), 
                                                 dimensions = c("campaign", "keyword"), 
                                                 dim_filters = my_filter_clause, anti_sample = TRUE)
     report.ga.google.cpc2<-inner_join(report.ga.google.cpc2.1, report.ga.google.cpc2.2)
-    report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals)]
+    report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals_and_transactions)]
   }else{
     report.ga.google.cpc2.1<-google_analytics_4(ga_view_id,
                                                 date_range = c(date_start, date_end), 
-                                                metrics = c("impressions", "sessions", goals[1:8]), 
+                                                metrics = c("impressions", "sessions", goals_and_transactions[1:8]), 
                                                 dimensions = c("campaign", "keyword"), 
                                                 dim_filters = my_filter_clause, anti_sample = TRUE)
     report.ga.google.cpc2.2<-google_analytics_4(ga_view_id,
                                                 date_range = c(date_start, date_end), 
-                                                metrics = c("impressions", "sessions", goals[9:16]), 
+                                                metrics = c("impressions", "sessions", goals_and_transactions[9:16]), 
                                                 dimensions = c("campaign", "keyword"), 
                                                 dim_filters = my_filter_clause, anti_sample = TRUE)
     report.ga.google.cpc2.3<-google_analytics_4(ga_view_id,
                                                 date_range = c(date_start, date_end), 
-                                                metrics = c("impressions", "sessions", goals[17:length(goals)]), 
+                                                metrics = c("impressions", "sessions", goals_and_transactions[17:length(goals_and_transactions)]), 
                                                 dimensions = c("campaign", "keyword"), 
                                                 dim_filters = my_filter_clause, anti_sample = TRUE)
     
     report.ga.google.cpc2<-inner_join(report.ga.google.cpc2.1, report.ga.google.cpc2.2)
     report.ga.google.cpc2<-inner_join(report.ga.google.cpc2, report.ga.google.cpc2.3)
     
-    report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals)]
+    report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals_and_transactions)]
     
   }
   report.ga.google.cpc<-inner_join(report.ga.google.cpc1, report.ga.google.cpc2, by=c("campaign", "keyword","impressions"))
@@ -229,7 +245,12 @@ make_report_google<-function(date_start, date_end){
   
   report.ga.google.cpc[, c(-1,-2, -3)]<-apply(report.ga.google.cpc[, c(-1,-2, -3)], 2, as.numeric)
   
-  report.ga.google.cpc$allGoalsCompletions<-apply(report.ga.google.cpc[,goals], 1, sum)
+  if (length(goals_and_transactions)==1){
+    report.ga.google.cpc$allGoalsCompletions<-report.ga.google.cpc[,goals_and_transactions]
+  }else{
+    report.ga.google.cpc$allGoalsCompletions<-apply(report.ga.google.cpc[,goals_and_transactions], 1, sum)
+  }
+    
   report.ga.google.cpc$CPC<-round(report.ga.google.cpc$adCost/report.ga.google.cpc$adClicks, 2)
   report.ga.google.cpc$CTR<-round(report.ga.google.cpc$adClicks/report.ga.google.cpc$impressions, 2)
   report.ga.google.cpc$CPA<-round(report.ga.google.cpc$adCost/report.ga.google.cpc$allGoalsCompletions, 2)
@@ -301,7 +322,7 @@ add_blanc_rows<-function(report){
   return(report_result[c(-1),])
 }
 summarise_by_campain<-function(report){
-  b<-dplyr::summarise(group_by(report, campaign_id, CampaignName), Cost=sum(Cost, na.rm = TRUE), sessions=sum(sessions, na.rm=TRUE), Impressions=sum(Impressions, na.rm=TRUE), Clicks = sum(Clicks, na.rm=TRUE), AvgClickPosition=mean(AvgClickPosition, na.rm=TRUE), AvgImpressionPosition=mean(AvgImpressionPosition, na.rm=TRUE), allGoalsCompletions=mean(allGoalsCompletions, na.rm=TRUE), transactionRevenue=sum(transactionRevenue, na.rm=TRUE))
+  b<-dplyr::summarise(group_by(report, campaign_id, CampaignName), Cost=sum(Cost, na.rm = TRUE), sessions=sum(sessions, na.rm=TRUE), Impressions=sum(Impressions, na.rm=TRUE), Clicks = sum(Clicks, na.rm=TRUE), AvgClickPosition=mean(AvgClickPosition, na.rm=TRUE), AvgImpressionPosition=mean(AvgImpressionPosition, na.rm=TRUE), allGoalsCompletions=sum(allGoalsCompletions, na.rm=TRUE), transactionRevenue=sum(transactionRevenue, na.rm=TRUE))
   b<-data.frame(b)
   b$keyword<-rep(enc2utf8(" все"), nrow(b))
   b$CPC<-round(b$Cost/b$Clicks, 2)
@@ -395,6 +416,16 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
     report.google.dif<-remove_na_rows(report.google.dif)
     
   }
+#conversion
+  report.ya.1$allGoalsCompletions<-report.ya.1$allGoalsCompletions/report.ya.1$sessions
+  report.ya.2$allGoalsCompletions<-report.ya.2$allGoalsCompletions/report.ya.2$sessions
+  
+  report.google.1$allGoalsCompletions<-report.google.1$allGoalsCompletions/report.google.1$sessions
+  report.google.2$allGoalsCompletions<-report.google.2$allGoalsCompletions/report.google.2$sessions
+
+  
+  
+  
   if (is.function(updateProgress)) {
     updateProgress(10/n, "round values")
   }  
@@ -403,9 +434,11 @@ form_reports<-function(date_start1, date_end1, date_start2, date_end2, updatePro
   report.google.1<-round_values(report.google.1)
   report.google.2<-round_values(report.google.2)
   
+  
   if (is.function(updateProgress)) {
     updateProgress(11/n, "rename columns")
   }  
+  
   cnames<-c("campaign_id",	"Название кампании",	"Ключевые слова",	"Расход",	"Сессии",	"Показы",	"Клики",	"CPC",	"Ср. поз. клика",	"Ср. поз. показа",	"CTR",	"Конверсия",	"Доход",	"CPA",	"ROI")
   colnames(report.ya.1)<-cnames
   colnames(report.ya.2)<-cnames

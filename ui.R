@@ -56,7 +56,7 @@ shinyUI(fluidPage(
       
       textInput("ya_login", "Логин проекта яндекс", ""),
       
-      textInput("goals", "Номера целей GA", ""),
+      textInput("goals", "Номера целей GA (не должны дублировать транзакции)", ""),
       
       fluidRow(
         
@@ -76,8 +76,23 @@ shinyUI(fluidPage(
       
     )),
     mainPanel(
-      actionButton("showSidebar", "показать меню"),
-      actionButton("hideSidebar", "спрятать меню"),
+      fluidRow(
+        
+        column(6,
+               
+               actionButton("showSidebar", "показать меню"),
+               actionButton("hideSidebar", "спрятать меню")
+               
+        ),
+        
+        
+        
+        column(6,
+               
+               disabled(actionButton("exportCSV", "Сохранить в csv"))
+        )
+      ),
+     
      
       h4(textOutput("warning"), style="color:red"),
       tabsetPanel(
