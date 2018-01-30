@@ -50,11 +50,28 @@ shinyUI(fluidPage(
                dateInput("date4", "по:")
         )
       ),
+      
+      fluidRow(
+        
+        column(6,
+               
+               
+               textInput("ya_login", "Введите логин проекта яндекс", "")
+               
+        ),
+        
+        
+        
+        column(6,
+               
+               selectInput('ya_previous', 'или выберите из использованных ранее', c("..."))
+        )
+      ),
+      
+      
       selectInput('ga_account', 'Аккаунт GA', c("sz.mastim", "adv.binario")),
       
       textInput("ga_view_id", "Идентификатор предствления GA", ""),
-      
-      textInput("ya_login", "Логин проекта яндекс", ""),
       
       textInput("goals", "Номера целей GA (не должны дублировать транзакции)", ""),
       

@@ -14,9 +14,13 @@ library(stringr)
 
 
 report<-NULL
+prev_params<-NULL
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
-  
+  observe({
+    prev_params<<-read.csv("prev_params.csv", stringsAsFactors = F)
+    updateSelectInput(session, "ya_previous", choices = c("...",prev_params$ya_login))
+  })
   
   observeEvent(input$showSidebar, {
     shinyjs::show(id = "Sidebar")
@@ -36,13 +40,28 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$test, {
-    updateTextInput(session, "ga_view_id", value="120758474")
     updateTextInput(session, "ya_login", value="biolatic-project")
+    updateSelectInput(session, "ga_account", selected="sz.mastim")
+    updateTextInput(session, "ga_view_id", value="120758474")
     updateTextInput(session, "goals", value="6, 12, 13, 15, 16, 17, 3, 20")
     
   })  
 
-  
+  observeEvent(input$ya_previous, {
+    if (input$ya_previous=="..."){
+      updateTextInput(session, "ya_login", value="")
+      updateSelectInput(session, "ga_account", selected="sz.mastim")
+      updateTextInput(session, "ga_view_id", value="")
+      updateTextInput(session, "goals", value="")
+      
+    }else{
+      a<-prev_params[prev_params$ya_login == input$ya_previous, ]
+      updateTextInput(session, "ya_login", value=a$ya_login)
+      updateSelectInput(session, "ga_account", selected=a$ga_account)
+      updateTextInput(session, "ga_view_id", value=a$ga_view_id)
+      updateTextInput(session, "goals", value=a$goals)
+    }
+  })  
   
   observeEvent(input$do, {
     
@@ -82,6 +101,20 @@ shinyServer(function(input, output, session) {
       }else if (any(as.numeric(goals_ga_numbers)>20)||any(as.numeric(goals_ga_numbers)<=0)){
         output$warning<-renderText({"Ошибка: Идентификаторы целей могут быть только от 1 до 20"})
       }else{
+        #save params
+        params<-data.frame(ya_login=input$ya_login, ga_account=input$ga_account, 
+                           ga_view_id=input$ga_view_id, goals=input$goals, stringsAsFactors = F)
+        print(params)
+        if (input$ya_login %in% prev_params$ya_login){
+          print("input$ya_login %in% prev_params$ya_login")
+          prev_params[prev_params$ya_login==input$ya_login,]<-params
+            
+        }else{
+          print("input$ya_login NOT %in% prev_params$ya_login")
+          prev_params<-rbind(prev_params, params)
+        }
+        print(prev_params)
+        write.csv(prev_params, "prev_params.csv", row.names = F)
         
         source("formReport.R")
         progress <- shiny::Progress$new()
@@ -188,7 +221,7 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$exportCSV, {
-    outpath<-sub("/shiny/datesApp", "/Result/datesApp", getwd())
+    outpath<-sub("/Shiny/Context", "/Result/Context", getwd())
     if (!is.null(report)){
       if (!file.exists(outpath)){
         dir.create(outpath)
@@ -197,13 +230,13 @@ shinyServer(function(input, output, session) {
       disable("exportCSV")
       
 
-      write.csv(report[[1]], paste(outpath, paste("direct", input$date1, input$date2, input$ya_login, ".csv", sep="_"), sep="/"))
-      write.csv(report[[2]], paste(outpath, paste("direct", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
-      write.csv(report[[3]], paste(outpath, paste("direct", input$date1, input$date2, "-", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
+      write.csv2(report[[1]], paste(outpath, paste("direct", input$date1, input$date2, input$ya_login, ".csv", sep="_"), sep="/"), row.names = F, quote = F)
+      write.csv2(report[[2]], paste(outpath, paste("direct", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"), row.names = F, quote = F)
+      write.csv2(report[[3]], paste(outpath, paste("direct", input$date1, input$date2, "-", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"), row.names = F, quote = F)
       
-      write.csv(report[[4]], paste(outpath, paste("adwords", input$date1, input$date2, input$ya_login, ".csv", sep="_"), sep="/"))
-      write.csv(report[[5]], paste(outpath, paste("adwords", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
-      write.csv(report[[6]], paste(outpath, paste("adwords", input$date1, input$date2, "-", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"))
+      write.csv2(report[[4]], paste(outpath, paste("adwords", input$date1, input$date2, input$ya_login, ".csv", sep="_"), sep="/"), row.names = F, quote = F)
+      write.csv2(report[[5]], paste(outpath, paste("adwords", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"), row.names = F, quote = F)
+      write.csv2(report[[6]], paste(outpath, paste("adwords", input$date1, input$date2, "-", input$date3, input$date4, input$ya_login, ".csv", sep="_"), sep="/"), row.names = F, quote = F)
       
       enable("do")
       enable("exportCSV")
