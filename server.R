@@ -40,16 +40,20 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$test, {
-    updateTextInput(session, "ya_login", value="biolatic-project")
+    updateSelectInput(session, "ya_previous", selected="...")
+    
+    updateTextInput(session, "ya_login", value="obruchalki-direct")
+    updateSelectInput(session, "ya_account", selected="stbinario")
     updateSelectInput(session, "ga_account", selected="sz.mastim")
-    updateTextInput(session, "ga_view_id", value="120758474")
-    updateTextInput(session, "goals", value="6, 12, 13, 15, 16, 17, 3, 20")
+    updateTextInput(session, "ga_view_id", value="172465481")
+    updateTextInput(session, "goals", value="1, 10")
     
   })  
 
   observeEvent(input$ya_previous, {
     if (input$ya_previous=="..."){
       updateTextInput(session, "ya_login", value="")
+      updateSelectInput(session, "ya_account", selected="stbinario")
       updateSelectInput(session, "ga_account", selected="sz.mastim")
       updateTextInput(session, "ga_view_id", value="")
       updateTextInput(session, "goals", value="")
@@ -57,6 +61,7 @@ shinyServer(function(input, output, session) {
     }else{
       a<-prev_params[prev_params$ya_login == input$ya_previous, ]
       updateTextInput(session, "ya_login", value=a$ya_login)
+      updateSelectInput(session, "ya_account", selected=a$ya_account)
       updateSelectInput(session, "ga_account", selected=a$ga_account)
       updateTextInput(session, "ga_view_id", value=a$ga_view_id)
       updateTextInput(session, "goals", value=a$goals)
@@ -102,7 +107,7 @@ shinyServer(function(input, output, session) {
         output$warning<-renderText({"Ошибка: Идентификаторы целей могут быть только от 1 до 20"})
       }else{
         #save params
-        params<-data.frame(ya_login=input$ya_login, ga_account=input$ga_account, 
+        params<-data.frame(ya_login=input$ya_login, ya_account=input$ya_account,  ga_account=input$ga_account, 
                            ga_view_id=input$ga_view_id, goals=input$goals, stringsAsFactors = F)
         print(params)
         if (input$ya_login %in% prev_params$ya_login){
@@ -116,7 +121,7 @@ shinyServer(function(input, output, session) {
         print(prev_params)
         write.csv(prev_params, "prev_params.csv", row.names = F)
         
-        source("formReport.R")
+        source("formPlacesReport.R")
         progress <- shiny::Progress$new()
         progress$set(message = "Computing data", value = 0)
         # Close the progress when this reactive exits (even if there's an error)
@@ -130,8 +135,16 @@ shinyServer(function(input, output, session) {
           progress$set(value = value, detail = detail)
         }
         
-        init(input$ga_view_id, input$ya_login, goals_ga_numbers, google_account=input$ga_account)
-        report <<-form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
+        init(input$ga_view_id, input$ya_login, goals_ga_numbers, google_account=input$ga_account, yandex_account=input$ya_account)
+        if (input$report_type=="keywords"){
+          report <<-form_reports(input$date1, input$date2, input$date3, input$date4, updateProgress)
+          string_colums<-c(1,2,3)
+        }
+        else{
+          report <<-form_reports_places(input$date1, input$date2, input$date3, input$date4, updateProgress)
+          string_colums<-c(1,2)
+        }
+        
         
         output$yatable1 = DT::renderDataTable({
   
@@ -151,7 +164,7 @@ shinyServer(function(input, output, session) {
           clrs<-c("#ff0000", "#ff6666", "#ffcccc", "#ebfaeb","#99e699", "#33cc33")
           DT::datatable(report[[3]], options = list(
             lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
-            pageLength = 10), selection = 'none') %>% formatStyle(names(report[[3]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
+            pageLength = 10), selection = 'none') %>% formatStyle(names(report[[3]])[-string_colums], backgroundColor = styleInterval(brks, clrs))
         })
         output$gtable1 = DT::renderDataTable({
           DT::datatable(report[[4]], options = list(
@@ -170,7 +183,7 @@ shinyServer(function(input, output, session) {
           clrs<-c("#ff0000", "#ff6666", "#ffcccc", "#ebfaeb","#99e699", "#33cc33")
           DT::datatable(report[[6]], options = list(
             lengthMenu = list(c(5, 10, 20, -1), c('5', '10', '20','All')),
-            pageLength = 10), selection = 'none') %>% formatStyle(names(report[[6]])[c(-1,-2, -3)], backgroundColor = styleInterval(brks, clrs))
+            pageLength = 10), selection = 'none') %>% formatStyle(names(report[[6]])[-string_colums], backgroundColor = styleInterval(brks, clrs))
         })
         enable("exportCSV")
       }

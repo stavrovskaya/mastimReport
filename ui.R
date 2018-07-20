@@ -23,7 +23,7 @@ shinyUI(fluidPage(
         column(6,
                
               
-              dateInput("date1", "с:", value = Sys.Date()-15)
+              dateInput("date1", "с:", value = Sys.Date()-16)
               
         ),
         
@@ -31,7 +31,7 @@ shinyUI(fluidPage(
         
         column(6,
               
-              dateInput("date2", "по:", value = Sys.Date()-8)
+              dateInput("date2", "по:", value = Sys.Date()-9)
         )
       ),
       h5("Период 2"),
@@ -39,7 +39,7 @@ shinyUI(fluidPage(
         
         column(6,
                
-               dateInput("date3", "с:", value = Sys.Date()-7)
+               dateInput("date3", "с:", value = Sys.Date()-8)
                
         ),
         
@@ -47,49 +47,47 @@ shinyUI(fluidPage(
         
         column(6,
                
-               dateInput("date4", "по:")
+               dateInput("date4", "по:", value = Sys.Date()-1)
         )
       ),
       
-      fluidRow(
-        
-        column(6,
                
+      textInput("ya_login", "Введите логин проекта яндекс", ""),
                
-               textInput("ya_login", "Введите логин проекта яндекс", "")
-               
-        ),
-        
-        
-        
-        column(6,
-               
-               selectInput('ya_previous', 'или выберите из использованных ранее', c("..."))
-        )
-      ),
+                 
+      selectInput("ya_previous", "или выберите из использованных ранее", c("..."), selected = "waiting"),
+
+      
+      selectInput("ya_account", "Аккаунт Яндекс.Метрики", c("sz@mastim.ru", "stbinario")),
       
       
-      selectInput('ga_account', 'Аккаунт GA', c("sz.mastim", "adv.binario")),
+      selectInput("ga_account", "Аккаунт GA", c("sz.mastim", "adv.binario")),
       
-      textInput("ga_view_id", "Идентификатор предствления GA", ""),
+      
+      
+      textInput("ga_view_id", "Идентификатор представления GA", ""),
       
       textInput("goals", "Номера целей GA (не должны дублировать транзакции)", ""),
       
+      
       fluidRow(
         
         column(6,
                
-               actionButton("do", "загрузить отчет")
+               radioButtons("report_type", "Тип отчета:",
+                            c("По ключам" = "keywords",
+                              "По площадкам" = "placement"))   
                
         ),
         
         
         
         column(6,
-               
-               actionButton("test", "тестовый пример")
+            
+               actionButton("test", "тестовый пример",width = "100%")
         )
-      )
+      ),
+      actionButton("do", "загрузить отчет",width = "100%",style="font-weight:bold")
       
     )),
     mainPanel(
