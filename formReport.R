@@ -15,8 +15,8 @@ remove_na = T
 
 google.account=NA
 yandex.account=NA
-ga_view_id=172465481#
-yalogin<-"obruchalki-direct"#"montegrappa-direct"#
+ga_view_id=37611610#172465481#
+yalogin<-"montegrappa-direct"#"obruchalki-direct"#
 goals_ga_numbers<-c(1, 2, 3, 4, 5, 6, 7, 8,9,10)#c(4, 2, 11, 9)
 goals_and_transactions<-c("transactions")
 
@@ -113,7 +113,7 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
   
   report.ga.ya.cpc<-NA
   if (length(goals_and_transactions) <= 8){
-    report.ga.ya.cpc<-google_analytics_4(ga_view_id,
+    report.ga.ya.cpc<-google_analytics(ga_view_id,
                                          date_range = c(date_start, date_end), 
                                          metrics = c("sessions", "transactionRevenue", goals_and_transactions), 
                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
@@ -132,7 +132,7 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
       
     }
   }else if(length(goals_and_transactions) <= 16){
-    report.ga.ya.cpc1<-google_analytics_4(ga_view_id,
+    report.ga.ya.cpc1<-google_analytics(ga_view_id,
                                          date_range = c(date_start, date_end), 
                                          metrics = c("sessions", "transactionRevenue", goals_and_transactions[1:8]), 
                                          dimensions = c("campaign", "keyword", "sourceMedium"), 
@@ -150,7 +150,7 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
       report.ga.ya.cpc <- cbind(report.ga.ya.cpc, goals_and_transactions_df)
       
     }else{
-      report.ga.ya.cpc2<-google_analytics_4(ga_view_id,
+      report.ga.ya.cpc2<-google_analytics(ga_view_id,
                                             date_range = c(date_start, date_end), 
                                             metrics = c("sessions", goals_and_transactions[9:length(goals_and_transactions)]), 
                                             dimensions = c("campaign", "keyword", "sourceMedium"), 
@@ -159,7 +159,7 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
       report.ga.ya.cpc<-report.ga.ya.cpc[,c( "campaign", "keyword", "sourceMedium", "sessions", "transactionRevenue", goals_and_transactions)]
     }
   }else{
-    report.ga.ya.cpc1<-google_analytics_4(ga_view_id,
+    report.ga.ya.cpc1<-google_analytics(ga_view_id,
                                           date_range = c(date_start, date_end), 
                                           metrics = c("sessions", "transactionRevenue", goals_and_transactions[1:8]), 
                                           dimensions = c("campaign", "keyword", "sourceMedium"), 
@@ -177,12 +177,12 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
       report.ga.ya.cpc <- cbind(report.ga.ya.cpc, goals_and_transactions_df)
       
     }else{
-      report.ga.ya.cpc2<-google_analytics_4(ga_view_id,
+      report.ga.ya.cpc2<-google_analytics(ga_view_id,
                                             date_range = c(date_start, date_end), 
                                             metrics = c("sessions", goals_and_transactions[9:16]), 
                                             dimensions = c("campaign", "keyword", "sourceMedium"), 
                                             dim_filters = my_filter_clause, anti_sample = TRUE) 
-      report.ga.ya.cpc3<-google_analytics_4(ga_view_id,
+      report.ga.ya.cpc3<-google_analytics(ga_view_id,
                                             date_range = c(date_start, date_end), 
                                             metrics = c("sessions", goals_and_transactions[17:length(goals_and_transactions)]), 
                                             dimensions = c("campaign", "keyword", "sourceMedium"), 
@@ -195,12 +195,14 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
     
   }
   
-  report.ga.ya.cpc<-mutate(report.ga.ya.cpc, campaign_id=sub("[A-Za-z_-]+\\|([0-9]+)", "\\1", campaign))
-  report.ga.ya.cpc$campaign_id<-as.integer(report.ga.ya.cpc$campaign_id)
+  #report.ga.ya.cpc<-mutate(report.ga.ya.cpc, campaign_name=sub("([A-Za-z_-]+)\\|.*", "\\1", campaign))
+  #report.ga.ya.cpc$campaign_id<-as.integer(report.ga.ya.cpc$campaign_id)
+  report.ga.ya.cpc$campaign <- sub("([A-Za-z_-]+)\\|.*", "\\1", report.ga.ya.cpc$campaign)
+  report.ga.ya.cpc$keyword[report.ga.ya.cpc$keyword == "{keyword}"] <- ""
   
   #get keywords
   
-  report.ga.ya.cpc.keyword<-dplyr::filter(report.ga.ya.cpc, keyword != "(not set)")
+  report.ga.ya.cpc.keyword <- dplyr::filter(report.ga.ya.cpc, keyword != "(not set)")
   
 #  report.ga.ya.cpc.keyword<-ddply(report.ga.ya.cpc.keyword,
 #                                  .(campaign_id, keyword),
@@ -209,7 +211,7 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
 #                                    y<-c(campaign=max(x[,1]), sourceMedium=max(x[,3]), y)
 #                                  })
   #make numeric from character columns
-  report.ga.ya.cpc.keyword[, c(-1,-2,-3)]<-apply(report.ga.ya.cpc.keyword[, c(-1,-2,-3)], 2, as.numeric)
+#  report.ga.ya.cpc.keyword[, c(-1,-2,-3)]<-apply(report.ga.ya.cpc.keyword[, c(-1,-2,-3)], 2, as.numeric)
   
   
   #get rsya and retargeting with placements
@@ -217,31 +219,28 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
   
   report.ga.ya.cpc.keyword.rsya_site<-filter(report.ga.ya.cpc.keyword, grepl('^.*\\|.*\\|?', keyword))
   
-  df<-extract(report.ga.ya.cpc.keyword.rsya_site, keyword, into = c('keyword', 'placement'), '(.+)\\|([^|]+)\\|?$')
+  df<-extract(report.ga.ya.cpc.keyword.rsya_site, keyword, into = c('keyword', 'placement'), '(.*)\\|([^|]*)\\|?$')
   report.ga.ya.cpc.keyword.rsya_site$keyword[!is.na(df$keyword)]<-df$keyword[!is.na(df$keyword)]
-  
-  
- 
-  report.ga.ya.cpc.keyword.rsya_site<- ddply(report.ga.ya.cpc.keyword.rsya_site,
-                                                                            .(campaign, keyword),
-                                                                            function(x){
-                                                                              y<-apply(x[,c(-1,-2,-3, -ncol(report.ga.ya.cpc.keyword.rsya_site))],2,sum);
-                                                                              y<-c(campaign_id=max(x[,ncol(report.ga.ya.cpc.keyword.rsya_site)]), sourceMedium=max(x[,3]), y)
-                                                                            })
-  #make numeric from character columns
-  if (nrow(report.ga.ya.cpc.keyword.rsya_site) != 0){
-    report.ga.ya.cpc.keyword.rsya_site[, c(-1,-2,-3)]<-apply( report.ga.ya.cpc.keyword.rsya_site[, c(-1,-2,-3)], 2, as.numeric)
-  }
-    
-  #ascribe campain_id
-  camp_id<-unique(filter(report.direct.keyword[,c("CampaignName", "CampaignId")], CampaignName %in% report.ga.ya.cpc.keyword.rsya_site$campaign))
-  report.ga.ya.cpc.keyword.rsya_site<-inner_join(report.ga.ya.cpc.keyword.rsya_site, camp_id, by = c("campaign" = "CampaignName"))
-  report.ga.ya.cpc.keyword.rsya_site$campaign_id<-report.ga.ya.cpc.keyword.rsya_site$CampaignId
-  
-  
   
   report.ga.ya.cpc.keyword<-rbind(report.ga.ya.cpc.keyword.no_rsya_site, report.ga.ya.cpc.keyword.rsya_site[, names(report.ga.ya.cpc.keyword.no_rsya_site)])
   
+  
+ 
+  report.ga.ya.cpc.keyword<- ddply(report.ga.ya.cpc.keyword,
+                                                                            .(campaign, keyword),
+                                                                            function(x){
+                                                                              y<-apply(x[,c(-1,-2,-3)],2,sum);
+                                                                              y<-c(sourceMedium=max(x[,3]), y)
+                                                                            })
+  
+    
+  #ascribe campain_id
+  camp_id<-unique(filter(report.direct.keyword[,c("CampaignName", "CampaignId")], CampaignName %in% report.ga.ya.cpc.keyword$campaign))
+  report.ga.ya.cpc.keyword<-inner_join(report.ga.ya.cpc.keyword, camp_id, by = c("campaign" = "CampaignName"))
+  report.ga.ya.cpc.keyword$campaign_id<-report.ga.ya.cpc.keyword$CampaignId
+  report.ga.ya.cpc.keyword$CampaignId<-NULL
+  
+  #make numeric from character columns
   report.ga.ya.cpc.keyword[, c(-1,-2,-3)]<-apply(report.ga.ya.cpc.keyword[, c(-1,-2,-3)], 2, as.numeric)
   
   #get non-keywords
@@ -251,8 +250,8 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
   report.ga.ya.cpc.non_keyword<-ddply(report.ga.ya.cpc.non_keyword,
                                       .(campaign),
                                       function(x){
-                                        y<-apply(x[,c(-1,-2,-3, -ncol(report.ga.ya.cpc.non_keyword))],2,sum);
-                                        y<-c(campaign_id=max(x[,ncol(report.ga.ya.cpc.non_keyword)]), keyword=max(x[,2]), sourceMedium=max(x[,3]), y)
+                                        y<-apply(x[,c(-1,-2,-3)],2,sum);
+                                        y<-c(keyword=max(x[,2]), sourceMedium=max(x[,3]), y)
                                       })
   #make numeric from character columns
   if (nrow(report.ga.ya.cpc.non_keyword) != 0){
@@ -263,13 +262,19 @@ make_report_ya<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
   #join
   #keyword
   report.ya.keyword<-full_join(report.ga.ya.cpc.keyword, report.direct.keyword, by = c("campaign" = "CampaignName", "keyword" = "Criteria_edt"))
+  
   #correct placement campaign_id
+
   report.ya.keyword$CampaignId <- apply(report.ya.keyword[, c("campaign_id", "CampaignId")],1,function(x){ if (!is.na(x[1]) & is.na(x[2])) {return(x[1])} else{ return(x[2])}})
+  report.ya.keyword$campaign_id <- NULL
   
   #non_keyword
   report.ya.non_keyword<-full_join(report.ga.ya.cpc.non_keyword, report.direct.non_keyword, by = c("campaign" = "CampaignName"))
   # bind into one result table
   report.ya<-rbind(report.ya.keyword, report.ya.non_keyword[,colnames(report.ya.keyword)])
+  
+  
+  
   if (length(goals_and_transactions)==1){
     report.ya$allGoalsCompletions<-report.ya[,goals_and_transactions]
   }else{
@@ -294,7 +299,7 @@ make_report_google<-function(date_start, date_end){
   
   
   
-  report.ga.google.cpc1<-google_analytics_4(ga_view_id,
+  report.ga.google.cpc1<-google_analytics(ga_view_id,
                                             date_range = c(date_start, date_end), 
                                             metrics = c("impressions", "adClicks", "adCost", "transactionRevenue"), 
                                             dimensions = c("campaign", "keyword","adwordsCampaignID"), 
@@ -320,18 +325,18 @@ make_report_google<-function(date_start, date_end){
   }
   report.ga.google.cpc2<-NA
   if (length(goals_and_transactions)<=8){
-    report.ga.google.cpc2<-google_analytics_4(ga_view_id,
+    report.ga.google.cpc2<-google_analytics(ga_view_id,
                                          date_range = c(date_start, date_end), 
                                          metrics = c("impressions", "sessions", goals_and_transactions), 
                                          dimensions = c("campaign", "keyword"), 
                                          dim_filters = my_filter_clause, anti_sample = TRUE)
   }else if(length(goals_and_transactions)<=16){
-    report.ga.google.cpc2.1<-google_analytics_4(ga_view_id,
+    report.ga.google.cpc2.1<-google_analytics(ga_view_id,
                                               date_range = c(date_start, date_end), 
                                               metrics = c("impressions", "sessions", goals_and_transactions[1:8]), 
                                               dimensions = c("campaign", "keyword"), 
                                               dim_filters = my_filter_clause, anti_sample = TRUE)
-    report.ga.google.cpc2.2<-google_analytics_4(ga_view_id,
+    report.ga.google.cpc2.2<-google_analytics(ga_view_id,
                                                 date_range = c(date_start, date_end), 
                                                 metrics = c("impressions", "sessions", goals_and_transactions[9:length(goals_and_transactions)]), 
                                                 dimensions = c("campaign", "keyword"), 
@@ -339,17 +344,17 @@ make_report_google<-function(date_start, date_end){
     report.ga.google.cpc2<-inner_join(report.ga.google.cpc2.1, report.ga.google.cpc2.2)
     report.ga.google.cpc2<-report.ga.google.cpc2[, c("campaign", "keyword", "impressions", "sessions", goals_and_transactions)]
   }else{
-    report.ga.google.cpc2.1<-google_analytics_4(ga_view_id,
+    report.ga.google.cpc2.1<-google_analytics(ga_view_id,
                                                 date_range = c(date_start, date_end), 
                                                 metrics = c("impressions", "sessions", goals_and_transactions[1:8]), 
                                                 dimensions = c("campaign", "keyword"), 
                                                 dim_filters = my_filter_clause, anti_sample = TRUE)
-    report.ga.google.cpc2.2<-google_analytics_4(ga_view_id,
+    report.ga.google.cpc2.2<-google_analytics(ga_view_id,
                                                 date_range = c(date_start, date_end), 
                                                 metrics = c("impressions", "sessions", goals_and_transactions[9:16]), 
                                                 dimensions = c("campaign", "keyword"), 
                                                 dim_filters = my_filter_clause, anti_sample = TRUE)
-    report.ga.google.cpc2.3<-google_analytics_4(ga_view_id,
+    report.ga.google.cpc2.3<-google_analytics(ga_view_id,
                                                 date_range = c(date_start, date_end), 
                                                 metrics = c("impressions", "sessions", goals_and_transactions[17:length(goals_and_transactions)]), 
                                                 dimensions = c("campaign", "keyword"), 
@@ -368,6 +373,35 @@ make_report_google<-function(date_start, date_end){
   
   
   report.ga.google.cpc[, c(-1,-2, -3)]<-apply(report.ga.google.cpc[, c(-1,-2, -3)], 2, as.numeric)
+  
+
+  report.ga.google.cpc$campaign <- sub("([A-Za-z_-]+)\\|.*", "\\1", report.ga.google.cpc$campaign)
+  report.ga.google.cpc$keyword[report.ga.google.cpc$keyword == "{keyword}"] <- ""
+  
+  #get keywords
+  
+  #get kms and retargeting with placements
+  report.ga.google.cpc.no_kms_site<-filter(report.ga.google.cpc,  !grepl('^.*\\|.*\\|?', keyword))
+  
+  report.ga.google.cpc.kms_site<-filter(report.ga.google.cpc, grepl('^.*\\|.*\\|?', keyword))
+  
+  df<-extract(report.ga.google.cpc.kms_site, keyword, into = c('keyword', 'placement'), '(.*)\\|([^|]*)\\|?$')
+  report.ga.google.cpc.kms_site$keyword[!is.na(df$keyword)]<-df$keyword[!is.na(df$keyword)]
+  
+  report.ga.google.cpc<-rbind(report.ga.google.cpc.no_kms_site, report.ga.google.cpc.kms_site[, names(report.ga.google.cpc.no_kms_site)])
+  
+  
+  
+  report.ga.google.cpc<- ddply(report.ga.google.cpc,
+                                   .(campaign, keyword),
+                                   function(x){
+                                     y<-apply(x[,c(-1,-2,-3)],2,sum);
+                                     y<-c(adwordsCampaignID=max(x[,3]), y)
+                                   })
+  if (nrow(report.ga.google.cpc) != 0){
+    report.ga.google.cpc[, c(-1,-2,-3)]<-apply(report.ga.google.cpc[, c(-1,-2,-3)], 2, as.numeric)
+  }
+  
   
   if (length(goals_and_transactions)==1){
     report.ga.google.cpc$allGoalsCompletions<-report.ga.google.cpc[,goals_and_transactions]

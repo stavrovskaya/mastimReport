@@ -18,7 +18,7 @@ total_placement_stat<-function(report){
 
 }
 
-make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
+make_report_ya_places<-function(date_start=Sys.Date()-8, date_end=Sys.Date()-1){
   
     ###yandex, in ga placement is keyword
     #direct
@@ -68,7 +68,7 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
     my_filter_clause <- filter_clause_ga4(list(source_medium_filter,campaign_filter), operator=c("AND"))
     
     if (length(goals_and_transactions) <= 8){
-      report.ga.placement<-google_analytics_4(ga_view_id,
+      report.ga.placement<-google_analytics(ga_view_id,
                                              date_range = c(date_start, date_end), 
                                              metrics = c("sessions", "transactionRevenue", goals_and_transactions), 
                                              dimensions = c("campaign","keyword"), 
@@ -84,7 +84,7 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
         
       }
     }else if(length(goals_and_transactions) <= 16){
-      report.ga.placement1<-google_analytics_4(ga_view_id,
+      report.ga.placement1<-google_analytics(ga_view_id,
                                               date_range = c(date_start, date_end), 
                                               metrics = c("sessions", "transactionRevenue", goals_and_transactions[1:8]), 
                                               dimensions = c("campaign","keyword"), 
@@ -99,7 +99,7 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
         report.ga.placement <- cbind(report.ga.placement, goals_and_transactions_df)
         
       }else{
-        report.ga.placement2<-google_analytics_4(ga_view_id,
+        report.ga.placement2<-google_analytics(ga_view_id,
                                                  date_range = c(date_start, date_end), 
                                                  metrics = c("sessions", "transactionRevenue", goals_and_transactions[9:length(goals_and_transactions)]), 
                                                  dimensions = c("campaign","keyword"), 
@@ -109,7 +109,7 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
       }
     }else{
       
-      report.ga.placement1<-google_analytics_4(ga_view_id,
+      report.ga.placement1<-google_analytics(ga_view_id,
                                                date_range = c(date_start, date_end), 
                                                metrics = c("sessions", "transactionRevenue", goals_and_transactions[1:8]), 
                                                dimensions = c("campaign","keyword"), 
@@ -124,12 +124,12 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
         report.ga.placement <- cbind(report.ga.placement, goals_and_transactions_df)
         
       }else{
-        report.ga.placement2<-google_analytics_4(ga_view_id,
+        report.ga.placement2<-google_analytics(ga_view_id,
                                                  date_range = c(date_start, date_end), 
                                                  metrics = c("sessions", "transactionRevenue", goals_and_transactions[9:16]), 
                                                  dimensions = c("campaign","keyword"), 
                                                  dim_filters = my_filter_clause, anti_sample = TRUE) 
-        report.ga.placement3<-google_analytics_4(ga_view_id,
+        report.ga.placement3<-google_analytics(ga_view_id,
                                                  date_range = c(date_start, date_end), 
                                                  metrics = c("sessions", "transactionRevenue", goals_and_transactions[17:length(goals_and_transactions)]), 
                                                  dimensions = c("campaign","keyword"), 
@@ -141,9 +141,15 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
       }
     }
     
-    report.placement.rsya<-filter(report.ga.placement, startsWith(campaign, "rsya") & grepl(".*\\|.+", keyword, perl=TRUE))
+    report.ga.placement$campaign <- sub("([A-Za-z_-]+)\\|.*", "\\1", report.ga.placement$campaign)
+    report.ga.placement$keyword[report.ga.placement$keyword == "{keyword}"] <- ""
     
-    report.placement.rsya<-extract(report.placement.rsya, keyword, into = c('keyword', 'placement'), '(.+)\\|([^|]+)\\|?$')
+    
+    
+    
+    report.placement.rsya<-filter(report.ga.placement, startsWith(campaign, "rsya") & grepl(".*\\|.*", keyword, perl=TRUE))
+    
+    report.placement.rsya<-extract(report.placement.rsya, keyword, into = c('keyword', 'placement'), '(.*)\\|([^|]*)\\|?$')
     
     
     
@@ -159,7 +165,7 @@ make_report_ya_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()){
     
     report.rsya.all<-total_placement_stat(report.rsya)
     
-    report.rsya.total<-rbind(report.rsya, report.rsya.all)
+    report.rsya.total<-data.frame(rbind(report.rsya, report.rsya.all))
     #sum up goal completion
     if (length(goals_and_transactions)==1){
       report.rsya.total$allGoalsCompletions<-report.rsya.total[,goals_and_transactions]
@@ -189,7 +195,7 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
     
     
     if (length(goals_and_transactions) <= 5){
-      report.google.ga.placement<-google_analytics_4(ga_view_id,
+      report.google.ga.placement<-google_analytics(ga_view_id,
                                                 date_range = c(date_start, date_end), 
                                                 metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions), 
                                                 dimensions = c("adPlacementDomain","campaign"), 
@@ -210,7 +216,7 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
                           ROI = numeric(0)))
       }
     }else if(length(goals_and_transactions) <= 10){
-      report.google.ga.placement1<-google_analytics_4(ga_view_id,
+      report.google.ga.placement1<-google_analytics(ga_view_id,
                                                      date_range = c(date_start, date_end), 
                                                      metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[1:5]), 
                                                      dimensions = c("adPlacementDomain","campaign"), 
@@ -230,7 +236,7 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
                           CPA  = numeric(0), 
                           ROI = numeric(0)))
       }else{
-        report.google.ga.placement2<-google_analytics_4(ga_view_id,
+        report.google.ga.placement2<-google_analytics(ga_view_id,
                                                         date_range = c(date_start, date_end), 
                                                         metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[6:length(goals_and_transactions)]), 
                                                         dimensions = c("adPlacementDomain","campaign"), 
@@ -240,7 +246,7 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
         report.google.ga.placement<-report.google.ga.placement[, c("adPlacementDomain","campaign", "adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions)]
       }
     }else if(length(goals_and_transactions) <= 15){
-      report.google.ga.placement1<-google_analytics_4(ga_view_id,
+      report.google.ga.placement1<-google_analytics(ga_view_id,
                                                       date_range = c(date_start, date_end), 
                                                       metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[1:5]), 
                                                       dimensions = c("adPlacementDomain","campaign"), 
@@ -260,12 +266,12 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
                           CPA  = numeric(0), 
                           ROI = numeric(0)))
       }else{
-        report.google.ga.placement2<-google_analytics_4(ga_view_id,
+        report.google.ga.placement2<-google_analytics(ga_view_id,
                                                         date_range = c(date_start, date_end), 
                                                         metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[6:10]), 
                                                         dimensions = c("adPlacementDomain","campaign"), 
                                                         dim_filters = my_filter_clause, anti_sample = TRUE)  
-        report.google.ga.placement3<-google_analytics_4(ga_view_id,
+        report.google.ga.placement3<-google_analytics(ga_view_id,
                                                         date_range = c(date_start, date_end), 
                                                         metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[11:length(goals_and_transactions)]), 
                                                         dimensions = c("adPlacementDomain","campaign"), 
@@ -278,7 +284,7 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
       }
     }else{
       {
-        report.google.ga.placement1<-google_analytics_4(ga_view_id,
+        report.google.ga.placement1<-google_analytics(ga_view_id,
                                                         date_range = c(date_start, date_end), 
                                                         metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[1:5]), 
                                                         dimensions = c("adPlacementDomain","campaign"), 
@@ -298,17 +304,17 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
                             CPA  = numeric(0), 
                             ROI = numeric(0)))
         }else{
-          report.google.ga.placement2<-google_analytics_4(ga_view_id,
+          report.google.ga.placement2<-google_analytics(ga_view_id,
                                                           date_range = c(date_start, date_end), 
                                                           metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[6:10]), 
                                                           dimensions = c("adPlacementDomain","campaign"), 
                                                           dim_filters = my_filter_clause, anti_sample = TRUE)  
-          report.google.ga.placement3<-google_analytics_4(ga_view_id,
+          report.google.ga.placement3<-google_analytics(ga_view_id,
                                                           date_range = c(date_start, date_end), 
                                                           metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[11:15]), 
                                                           dimensions = c("adPlacementDomain","campaign"), 
                                                           dim_filters = my_filter_clause, anti_sample = TRUE)  
-          report.google.ga.placement4<-google_analytics_4(ga_view_id,
+          report.google.ga.placement4<-google_analytics(ga_view_id,
                                                           date_range = c(date_start, date_end), 
                                                           metrics = c("adCost", "adClicks", "impressions", "sessions", "transactionRevenue", goals_and_transactions[15:length(goals_and_transactions)]), 
                                                           dimensions = c("adPlacementDomain","campaign"), 
@@ -325,6 +331,7 @@ make_report_google_places<-function(date_start=Sys.Date()-7, date_end=Sys.Date()
     
     colnames(report.google.ga.placement)<-c("Placement", "CampaignName",  "Cost", "Clicks", "Impressions", 
                   "sessions",  "transactionRevenue", goals_and_transactions)
+    report.google.ga.placement$CampaignName <- sub("([A-Za-z_-]+)\\|.*", "\\1", report.google.ga.placement$CampaignName)
     
     #add sum statistic for each placement
     report.google.all<-total_placement_stat(report.google.ga.placement)
